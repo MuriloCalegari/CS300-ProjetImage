@@ -91,6 +91,60 @@
       "shape_type": "circle",
       "flags": {},
       "mask": null
+    },
+    {
+      "label": "1_centime",
+      "points": [
+        [
+          737.9032258064517,
+          462.9032258064516
+        ],
+        [
+          820.1612903225807,
+          462.9032258064516
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "circle",
+      "flags": {},
+      "mask": null
+    },
+    {
+      "label": "5_centimes",
+      "points": [
+        [
+          395.9677419354839,
+          850.0
+        ],
+        [
+          504.0322580645162,
+          846.7741935483871
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "circle",
+      "flags": {},
+      "mask": null
+    },
+    {
+      "label": "2_centimes",
+      "points": [
+        [
+          197.58064516129033,
+          619.3548387096774
+        ],
+        [
+          295.9677419354839,
+          619.3548387096774
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "circle",
+      "flags": {},
+      "mask": null
     }
   ],
   "imagePath": "../65.jpg",
