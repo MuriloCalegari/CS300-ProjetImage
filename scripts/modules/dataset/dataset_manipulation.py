@@ -57,5 +57,3 @@ def get_labels():
                 labels.add(shape["label"])
 
     return labels
-    
-

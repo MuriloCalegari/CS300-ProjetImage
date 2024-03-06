@@ -1,12 +1,14 @@
 from modules.utils import get_parameter
 
+
 def main():
     print("""
     Insert option to continue:
           1. Split datasets
           2. Extract labels from dataset
+          3. Test model
           """)
-    
+
     option = input("Option: ")
 
     match option:
@@ -16,8 +18,12 @@ def main():
         case "2":
             from modules.dataset.dataset_manipulation import get_labels
             print(get_labels())
+        case "3":
+            from modules.model.model_tester import test_model
+            test_model()
         case _:
             print("Invalid option")
             main()
+
 
 main()
