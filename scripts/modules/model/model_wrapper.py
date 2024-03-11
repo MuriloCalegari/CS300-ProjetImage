@@ -3,6 +3,8 @@ import matplotlib.image as mpimg
 from os.path import join
 import cv2 as cv
 
+from modules.model.circle_detection.hough_transform import detect_circles
+
 def detect_coins(image_file, parameters):
     """
     High level function to detect coins in an image.
@@ -35,12 +37,17 @@ def detect_coins(image_file, parameters):
     return set()
 
 def find_coins(image, parameters):
-    print("Apply Otus thresholding")
-    gray_image = cv.cvtColor(image, cv.COLOR_BGR2GRAY)  # Convert image to grayscale
-    ret2, th2 = cv.threshold(gray_image, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
-    plt.imshow(th2, cmap="gray", lvmin=0, vmax=255)
-    plt.show()
-    return set()
+    """
+    Find the coins in the image.
+
+    Args:
+        image (numpy.ndarray): The input image.
+        parameters (dict): A dictionary of parameters for the coin detection algorithm.
+
+    Returns:
+        set: A set of tuples (center, radius) representing the detected coins.
+    """
+    return detect_circles(image)
 
 def label_coins(coins, parameters):
     return set()

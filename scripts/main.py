@@ -8,6 +8,7 @@ def main():
           2. Extract labels from dataset
           3. Test model
           4. Generate squared images from dataset
+          5. Test detect circles
           """)
 
     option = input("Option: ")
@@ -25,6 +26,11 @@ def main():
         case "4":
             from modules.dataset.dataset_manipulation import generate_coin_squares
             generate_coin_squares()
+        case "5":
+            from modules.model.circle_detection.hough_transform import detect_circles
+            # detect_circles("../Images/28.jpg")
+            from modules.model.model_tester import test_find_coins
+            test_find_coins()
         case _:
             print("Invalid option")
             main()
