@@ -7,6 +7,7 @@ def main():
           1. Split datasets
           2. Extract labels from dataset
           3. Test model
+          4. Generate squared images from dataset
           """)
 
     option = input("Option: ")
@@ -21,6 +22,9 @@ def main():
         case "3":
             from modules.model.model_tester import test_model
             test_model()
+        case "4":
+            from modules.dataset.dataset_manipulation import generate_coin_squares
+            generate_coin_squares()
         case _:
             print("Invalid option")
             main()
