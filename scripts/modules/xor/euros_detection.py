@@ -59,7 +59,7 @@ def classify_coin(coin_image, ref_1_euro, ref_2_euro):
     mean_xor_value_1 = np.mean(xor_result_1)
     mean_xor_value_2 = np.mean(xor_result_2)
     
-    color_threshold = 100
+    color_threshold = 90
     if mean_xor_value_1 < color_threshold:
         classification = "1 Euro"
     elif mean_xor_value_2 < color_threshold:
@@ -78,7 +78,7 @@ def classify_coin(coin_image, ref_1_euro, ref_2_euro):
     return classification
 
 
-coin_image = cv2.imread('/home/yassfkh/Desktop/ProjetImage/ProjetImage/scripts/cache/testing_set/1_euro/170_2_1_euro.jpg')
+coin_image = cv2.imread('/home/yassfkh/Desktop/ProjetImage/ProjetImage/scripts/cache/testing_set/1_euro/82_0_1_euro.jpg')
 ref_1_euro = cv2.imread('unE.png')
 ref_2_euro = cv2.imread('deuxE.jpg')
 
