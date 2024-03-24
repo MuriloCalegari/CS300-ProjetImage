@@ -1,6 +1,17 @@
 {
     "image_path": "../Images",
     "annotations_path": "../Images/Annotated",
+    "hough_parameters": {
+        "max_res": 1024,
+        "show_preview": true,
+        "use_default_hough": true,
+        "min_radius": 0.02,
+        "max_radius": 0.25,
+        "minDist": 0.05,
+        "param1": 100,
+        "param2": 30,
+        "dp": 1
+    },
     "training_set": [
         "76.JPG",
         "39.jpg",

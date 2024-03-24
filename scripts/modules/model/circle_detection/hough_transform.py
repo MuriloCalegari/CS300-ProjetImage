@@ -10,7 +10,10 @@ from skimage.feature import canny
 from skimage.transform import hough_ellipse
 from skimage.draw import ellipse_perimeter
 
+from modules.utils import get_parameter
+
 import cv2 as cv
+import math
 
 # Load picture and detect edges
 def detect_circles(image_path):
@@ -25,6 +28,22 @@ def detect_circles(image_path):
     """
     return detect_cicles_opencv(image_path)
 
+def denormalize_1d(length, image_shape):
+    return length * math.sqrt(image_shape[0] * image_shape[1])
+
+max_lowThreshold = 100
+window_name = 'Edge Map'
+title_trackbar = 'Min Threshold:'
+ratio = 3
+kernel_size = 3
+def CannyThreshold(val, src, src_gray):
+    low_threshold = val
+    img_blur = cv.blur(src_gray, (3,3))
+    detected_edges = cv.Canny(img_blur, low_threshold, low_threshold*ratio, kernel_size)
+    mask = detected_edges != 0
+    dst = src * (mask[:,:,None].astype(src.dtype))
+    return dst
+
 def detect_cicles_opencv(image_path):
     src = cv.imread(image_path, cv.IMREAD_COLOR)
     # Check if image is loaded fine
@@ -32,18 +51,52 @@ def detect_cicles_opencv(image_path):
         print ('Error opening image!')
         return -1
     
-    ## Rescale the image to fit in a 2048x2048 window or keep the original size if it's smaller
+    ## Rescale the image to fit in a max_res x max_res window or keep the original size if it's smaller
     scale = 1
-    if src.shape[0] > 1024 or src.shape[1] > 1024:
-        scale = 1024 / max(src.shape[0], src.shape[1])
+    max_largest_dim = get_parameter("hough_parameters")["max_res"]
+    if src.shape[0] > max_largest_dim or src.shape[1] > max_largest_dim:
+        scale = max_largest_dim / max(src.shape[0], src.shape[1])
         src = cv.resize(src, (int(src.shape[1] * scale), int(src.shape[0] * scale)))
     
     gray = cv.cvtColor(src, cv.COLOR_BGR2GRAY)
+
+    # gray = cv.medianBlur(gray, 5)
+    gray = cv.GaussianBlur(gray, (3, 3), 0)
+
+    # Equalize image's histogram
+    # gray = cv.equalizeHist(gray)
+
+    # Apply Laplace
+    ddepth = cv.CV_16S
+    kernel_size = 3
+    gray = cv.convertScaleAbs(cv.Laplacian(gray, ddepth, ksize=kernel_size))
+    # cv.imshow("Laplace", dst)
     
-    gray = cv.medianBlur(gray, 5)  
+    # # Apply OTSU to the image
+    ret1, mask = cv.threshold(gray,0,255,cv.THRESH_BINARY+cv.THRESH_OTSU)
+    gray = cv.bitwise_and(gray, gray, mask=mask)
+
+    # Stack the images. src, mask, gray
+    after_canny = CannyThreshold(0, src, gray)
+
+    compare = np.hstack((src, cv.cvtColor(gray, cv.COLOR_GRAY2RGB), after_canny))
     
     rows = gray.shape[0]
-    circles = cv.HoughCircles(gray, cv.HOUGH_GRADIENT, 1, rows / 8)
+
+    parameters = get_hough_parameters()
+
+    min_radius = int(denormalize_1d(parameters["min_radius"], gray.shape))
+    max_radius = int(denormalize_1d(parameters["max_radius"], gray.shape))
+    minDist = int(denormalize_1d(parameters["minDist"], gray.shape))
+
+    print(f"Min radius: {min_radius}, Max radius: {max_radius}")
+
+    if(get_parameter("hough_parameters")["use_default_hough"]):
+        circles = cv.HoughCircles(gray, cv.HOUGH_GRADIENT, 1, 40)
+    else:
+        circles = cv.HoughCircles(gray, cv.HOUGH_GRADIENT, parameters["dp"], minDist=minDist,
+            param1=parameters["param1"], param2=parameters["param2"],
+            minRadius=min_radius, maxRadius=max_radius)
 
     output = set()
     
@@ -59,10 +112,32 @@ def detect_cicles_opencv(image_path):
             output.add(((int(i[0] * 1 / scale), int(i[1] * 1 / scale)), int(radius * 1 / scale)))
             cv.circle(src, center, radius, (255, 0, 255), 3)
     
-    # cv.imshow("detected circles", src)
-    # cv.waitKey(0)
+    if(get_parameter("hough_parameters")["show_preview"]):
+        src = np.hstack((compare, src))
+        cv.imshow(f"detected circles {image_path}", src)
+        cv.waitKey(0)
+        cv.destroyAllWindows()
 
     return output
+
+def get_hough_parameters():
+    parameters = get_parameter("hough_parameters")
+    
+    if(parameters.get("param1") is None):
+        parameters["param1"] = 100
+    if parameters.get("param2") is None:
+        parameters["param2"] = 30
+    if parameters.get("min_radius") is None:
+        parameters["min_radius"] = 1
+    if parameters.get("max_radius") is None:
+        parameters["max_radius"] = 30
+    if parameters.get("dp") is None:
+        parameters["dp"] = 1
+    if parameters.get("minDist") is None:
+        parameters["minDist"] = 30
+
+    return parameters
+    
 
 def detect_circles_skimage():
     image = img_as_ubyte(data.coins()[160:230, 70:270])
