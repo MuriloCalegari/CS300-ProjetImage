@@ -52,7 +52,7 @@ def find_param1_param2(training_set, parameters):
             reset_parameters()
 
             # We maximize the f1 score from the macro-average results
-            f1_result = test_find_coins("training_set")["macro-average"]["f1"]
+            f1_result = test_find_coins("training_set")["macro_average"]["f1"]
 
             if(f1_result > best_f1):
                 best_f1 = f1_result
