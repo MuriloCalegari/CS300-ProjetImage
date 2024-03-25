@@ -4,8 +4,10 @@ import math
 parameters = None
 
 def get_parameters():
-    with open("./parameters.json", "r") as file:
-        parameters = json.loads(file.read())
+    global parameters  # Add global keyword to access the global variable
+    if(parameters is None):
+        with open("./parameters.json", "r") as file:
+            parameters = json.loads(file.read())
     
     return parameters
 

@@ -27,16 +27,16 @@ def detect_coins(image_file, parameters):
     )
     """
     # Load all images using matplotlib
-    image = mpimg.imread(join(parameters['image_path'], image_file))
+    image_path = join(parameters['image_path'], image_file)
 
     # Detect coins in the image
-    coins = find_coins(image, parameters)
+    coins = find_coins(image_path, parameters)
 
     labeled_coins = label_coins(coins, parameters)
 
     return set()
 
-def find_coins(image, parameters):
+def find_coins(image_path, parameters):
     """
     Find the coins in the image.
 
@@ -47,7 +47,7 @@ def find_coins(image, parameters):
     Returns:
         set: A set of tuples (center, radius) representing the detected coins.
     """
-    return detect_circles(image)
+    return detect_circles(image_path)
 
 def label_coins(coins, parameters):
     return set()

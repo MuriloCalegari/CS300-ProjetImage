@@ -3,13 +3,13 @@
     "annotations_path": "../Images/Annotated",
     "hough_parameters": {
         "max_res": 1024,
-        "show_preview": true,
+        "show_preview": false,
         "use_default_hough": true,
-        "min_radius": 0.02,
-        "max_radius": 0.25,
+        "min_radius": 0,
+        "max_radius": 0,
         "minDist": 0.05,
         "param1": 100,
-        "param2": 30,
+        "param2": 200,
         "dp": 1
     },
     "training_set": [

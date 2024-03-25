@@ -45,6 +45,7 @@ def CannyThreshold(val, src, src_gray):
     return dst
 
 def detect_cicles_opencv(image_path):
+    print(image_path)
     src = cv.imread(image_path, cv.IMREAD_COLOR)
     # Check if image is loaded fine
     if src is None:
@@ -60,21 +61,28 @@ def detect_cicles_opencv(image_path):
     
     gray = cv.cvtColor(src, cv.COLOR_BGR2GRAY)
 
-    # gray = cv.medianBlur(gray, 5)
-    gray = cv.GaussianBlur(gray, (3, 3), 0)
+    gray = cv.medianBlur(gray, 5)
+    # gray = cv.GaussianBlur(gray, (3, 3), 0)
 
     # Equalize image's histogram
     # gray = cv.equalizeHist(gray)
 
     # Apply Laplace
-    ddepth = cv.CV_16S
-    kernel_size = 3
-    gray = cv.convertScaleAbs(cv.Laplacian(gray, ddepth, ksize=kernel_size))
+    # ddepth = cv.CV_16S
+    # kernel_size = 3
+    # gray = cv.convertScaleAbs(cv.Laplacian(gray, ddepth, ksize=kernel_size))
+    # gray = cv.GaussianBlur(gray, (3, 3), 0)
     # cv.imshow("Laplace", dst)
+
     
     # # Apply OTSU to the image
-    ret1, mask = cv.threshold(gray,0,255,cv.THRESH_BINARY+cv.THRESH_OTSU)
-    gray = cv.bitwise_and(gray, gray, mask=mask)
+    # ret1, mask = cv.threshold(gray,0,255,cv.THRESH_BINARY+cv.THRESH_OTSU)
+    # gray = cv.bitwise_and(gray, gray, mask=mask)
+    
+    # Apply opening
+    # gray = cv.medianBlur(gray, 9)
+    # kernel = np.ones((5,5),np.uint8)
+    # gray = cv.morphologyEx(gray, cv.MORPH_OPEN, kernel)
 
     # Stack the images. src, mask, gray
     after_canny = CannyThreshold(0, src, gray)
@@ -85,15 +93,14 @@ def detect_cicles_opencv(image_path):
 
     parameters = get_hough_parameters()
 
-    min_radius = int(denormalize_1d(parameters["min_radius"], gray.shape))
-    max_radius = int(denormalize_1d(parameters["max_radius"], gray.shape))
-    minDist = int(denormalize_1d(parameters["minDist"], gray.shape))
-
-    print(f"Min radius: {min_radius}, Max radius: {max_radius}")
-
     if(get_parameter("hough_parameters")["use_default_hough"]):
-        circles = cv.HoughCircles(gray, cv.HOUGH_GRADIENT, 1, 40)
+        circles = cv.HoughCircles(gray, cv.HOUGH_GRADIENT, 1, rows / 8)
     else:
+        min_radius = int(denormalize_1d(parameters["min_radius"], gray.shape))
+        max_radius = int(denormalize_1d(parameters["max_radius"], gray.shape))
+        minDist = int(denormalize_1d(parameters["minDist"], gray.shape))
+
+        print(f"Min radius: {min_radius}, Max radius: {max_radius}, minDist: {minDist}")
         circles = cv.HoughCircles(gray, cv.HOUGH_GRADIENT, parameters["dp"], minDist=minDist,
             param1=parameters["param1"], param2=parameters["param2"],
             minRadius=min_radius, maxRadius=max_radius)
