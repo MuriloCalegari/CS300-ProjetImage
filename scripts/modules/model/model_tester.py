@@ -226,8 +226,8 @@ def compute_f1(masked_ground_truth, masked_model):
     false_negatives_count = cv.countNonZero(false_negatives)
     # true_negatives_count = cv.countNonZero(true_negatives)
 
-    precision = true_positives_count / (true_positives_count + false_positives_count)
-    recall = true_positives_count / (true_positives_count + false_negatives_count)
+    precision = true_positives_count / (true_positives_count + false_positives_count) if (true_positives_count + false_positives_count) > 0 else 0
+    recall = true_positives_count / (true_positives_count + false_negatives_count) if (true_positives_count + false_negatives_count) > 0 else 0
 
     if(precision == 0 or recall == 0):
         return 0

@@ -3,7 +3,7 @@
     "annotations_path": "../Images/Annotated",
     "hough_parameters": {
         "max_res": 1024,
-        "show_preview": false,
+        "show_preview": true,
         "use_default_hough": false,
         "apply_laplace": false,
         "post_processing": {
@@ -12,8 +12,8 @@
         "min_radius": 0,
         "max_radius": 0,
         "minDist": 0.02,
-        "param1": 50.0,
-        "param2": 0.5,
+        "param1": 300,
+        "param2": 0.85,
         "dp": 1
     },
     "training": {
