@@ -10,7 +10,15 @@ from skimage.feature import canny
 from skimage.transform import hough_ellipse
 from skimage.draw import ellipse_perimeter
 
+from skimage.feature import peak_local_max
+from skimage.segmentation import watershed
+from scipy import ndimage
+import imutils
+
+from modules.model.circle_detection.utils import remove_overlapping_circles
 from modules.utils import get_parameter
+from modules.model.circle_detection.pre_processing import apply_laplace
+from modules.model.circle_detection.enchanced_hough_search import find_circles
 
 import cv2 as cv
 import math
@@ -27,6 +35,70 @@ def detect_circles(image_path):
         set: A set of tuples (center, radius) where center is also a tuple (x, y).
     """
     return detect_cicles_opencv(image_path)
+
+def detect_circles_watershed(image_path):
+    src = cv.imread(image_path, cv.IMREAD_COLOR)
+    # Check if image is loaded fine
+    if src is None:
+        print ('Error opening image!')
+        return -1
+    
+    ## Rescale the image to fit in a max_res x max_res window or keep the original size if it's smaller
+    scale = 1
+    max_largest_dim = get_parameter("hough_parameters")["max_res"]
+    if src.shape[0] > max_largest_dim or src.shape[1] > max_largest_dim:
+        scale = max_largest_dim / max(src.shape[0], src.shape[1])
+        src = cv.resize(src, (int(src.shape[1] * scale), int(src.shape[0] * scale)))
+
+    shifted = cv.pyrMeanShiftFiltering(src, 21, 51)
+    cv.imshow("Input", src)
+    gray = cv.cvtColor(shifted, cv.COLOR_BGR2GRAY)
+    thresh = cv.threshold(gray, 0, 255,
+    cv.THRESH_BINARY | cv.THRESH_OTSU)[1]
+    cv.imshow("Thresh", thresh)
+
+    # compute the exact Euclidean distance from every binary
+    # pixel to the nearest zero pixel, then find peaks in this
+    # distance map
+    D = ndimage.distance_transform_edt(thresh)
+    localMax = peak_local_max(D, min_distance=20, labels=thresh)
+    peaks_mask = np.zeros_like(D, dtype=bool)
+    peaks_mask[localMax] = True
+
+    localMax = peaks_mask
+
+    # perform a connected component analysis on the local peaks,
+    # using 8-connectivity, then apply the Watershed algorithm
+    markers = ndimage.label(localMax, structure=np.ones((3, 3)))[0]
+    labels = watershed(-D, markers, mask=thresh)
+    print("[INFO] {} unique segments found".format(len(np.unique(labels)) - 1))
+
+    # loop over the unique labels returned by the Watershed
+    # algorithm
+    for label in np.unique(labels):
+        # if the label is zero, we are examining the 'background'
+        # so simply ignore it
+        if label == 0:
+            continue
+        # otherwise, allocate memory for the label region and draw
+        # it on the mask
+        mask = np.zeros(gray.shape, dtype="uint8")
+        mask[labels == label] = 255
+        # detect contours in the mask and grab the largest one
+        cnts = cv.findContours(mask.copy(), cv.RETR_EXTERNAL,
+            cv.CHAIN_APPROX_SIMPLE)
+        cnts = imutils.grab_contours(cnts)
+        c = max(cnts, key=cv.contourArea)
+        # draw a circle enclosing the object
+        ((x, y), r) = cv.minEnclosingCircle(c)
+        cv.circle(src, (int(x), int(y)), int(r), (0, 255, 0), 2)
+        cv.putText(src, "#{}".format(label), (int(x) - 10, int(y)),
+            cv.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+    
+    # show the output image
+    cv.imshow("Output", src)
+    cv.waitKey(0)
+
 
 def denormalize_1d(length, image_shape):
     return length * math.sqrt(image_shape[0] * image_shape[1])
@@ -68,11 +140,10 @@ def detect_cicles_opencv(image_path):
     # gray = cv.equalizeHist(gray)
 
     # Apply Laplace
-    # ddepth = cv.CV_16S
-    # kernel_size = 3
-    # gray = cv.convertScaleAbs(cv.Laplacian(gray, ddepth, ksize=kernel_size))
+    if(get_hough_parameters().get("apply_laplace")):
+        gray = apply_laplace(gray)
     # gray = cv.GaussianBlur(gray, (3, 3), 0)
-    # cv.imshow("Laplace", dst)
+    # cv.imshow("Laplace", gray)
 
     
     # # Apply OTSU to the image
@@ -81,7 +152,7 @@ def detect_cicles_opencv(image_path):
     
     # Apply opening
     # gray = cv.medianBlur(gray, 9)
-    # kernel = np.ones((5,5),np.uint8)
+    # kernel = np.ones((3,3),np.uint8)
     # gray = cv.morphologyEx(gray, cv.MORPH_OPEN, kernel)
 
     # Stack the images. src, mask, gray
@@ -100,8 +171,10 @@ def detect_cicles_opencv(image_path):
         max_radius = int(denormalize_1d(parameters["max_radius"], gray.shape))
         minDist = int(denormalize_1d(parameters["minDist"], gray.shape))
 
+        print(f"Running hough transform with parameters: {parameters}")
+
         print(f"Min radius: {min_radius}, Max radius: {max_radius}, minDist: {minDist}")
-        circles = cv.HoughCircles(gray, cv.HOUGH_GRADIENT, parameters["dp"], minDist=minDist,
+        circles = cv.HoughCircles(gray, cv.HOUGH_GRADIENT_ALT, parameters["dp"], minDist=minDist,
             param1=parameters["param1"], param2=parameters["param2"],
             minRadius=min_radius, maxRadius=max_radius)
 
@@ -109,7 +182,12 @@ def detect_cicles_opencv(image_path):
     
     if circles is not None:
         circles = np.uint16(np.around(circles))
-        for i in circles[0, :]:
+        circles = circles[0, :]
+
+        if(get_parameter("hough_parameters")["post_processing"]["remove_overlapping"]):
+            circles = remove_overlapping_circles(circles)
+
+        for i in circles:
             print(f"Found circle! {i}")
             center = (i[0], i[1])
             # circle center

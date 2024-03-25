@@ -1,4 +1,5 @@
-from modules.utils import get_parameter, get_parameters
+from modules.utils import get_parameter, get_parameters, reset_parameters
+from modules.model.model_tester import test_find_coins
 import math
 import json
 import cv2 as cv
@@ -15,6 +16,53 @@ def euclidean_distance(p1, p2):
 def find_hough_parameters():
     training_set = get_parameter("training_set")
 
+    parameters = get_parameters()
+
+    found_params = find_param1_param2(training_set, parameters)
+
+    parameters["hough_parameters"]["param1"] = found_params[0]
+    parameters["hough_parameters"]["param2"] = found_params[1]
+
+    with open("parameters.json", "w") as file:
+        file.write(json.dumps(parameters, indent=4))
+    
+    return {
+        "param_1": found_params[0],
+        "param_2": found_params[1]
+    }
+
+def find_param1_param2(training_set, parameters):
+    param_1_range = parameters["training"]["hough_parameters"]["param1"]
+    param_2_range = parameters["training"]["hough_parameters"]["param2"]
+
+    best_f1 = 0
+    best_param_1 = 0
+    best_param_2 = 0
+
+    for i in np.arange(param_1_range["base"], param_1_range["bound"], param_1_range["step"]):
+        for j in np.arange(param_2_range["base"], param_2_range["bound"], param_2_range["step"]):
+            parameters["hough_parameters"]["param1"] = float(i)
+            parameters["hough_parameters"]["param2"] = float(j)
+
+            print(f"Testing parameters: param1 = {i}, param2 = {j}")
+
+            with open("parameters.json", "w") as file:
+                file.write(json.dumps(parameters, indent=4))
+
+            reset_parameters()
+
+            # We maximize the f1 score from the macro-average results
+            f1_result = test_find_coins("training_set")["macro-average"]["f1"]
+
+            if(f1_result > best_f1):
+                best_f1 = f1_result
+                best_param_1 = i
+                best_param_2 = j
+
+    return best_param_1, best_param_2
+    
+
+def find_min_max_radius(training_set):
     # Both of these are scaled by the image size
     min_radius = float('inf')
     max_radius = 0
@@ -44,18 +92,10 @@ def find_hough_parameters():
     min_radius = np.percentile(radius_array, 10)
     print(f"Min radius: {min_radius}, Max radius: {max_radius}")
 
-    parameters = get_parameters()
-    parameters["hough_parameters"]["min_radius"] = min_radius
-    parameters["hough_parameters"]["max_radius"] = max_radius
-
-    with open("parameters.json", "w") as file:
-        file.write(json.dumps(parameters, indent=4))
-    
     return {
         "min_radius": min_radius,
         "max_radius": max_radius
     }
-        
 
 def normalize_radius(radius, image_shape):
     return radius / math.sqrt(image_shape[0] * image_shape[1])

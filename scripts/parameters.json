@@ -4,13 +4,31 @@
     "hough_parameters": {
         "max_res": 1024,
         "show_preview": false,
-        "use_default_hough": true,
+        "use_default_hough": false,
+        "apply_laplace": false,
+        "post_processing": {
+            "remove_overlapping": true
+        },
         "min_radius": 0,
         "max_radius": 0,
-        "minDist": 0.05,
-        "param1": 100,
-        "param2": 200,
+        "minDist": 0.02,
+        "param1": 50.0,
+        "param2": 0.5,
         "dp": 1
+    },
+    "training": {
+        "hough_parameters": {
+            "param1": {
+                "base": 50,
+                "bound": 500,
+                "step": 50
+            },
+            "param2": {
+                "base": 0.5,
+                "bound": 1,
+                "step": 0.05
+            }
+        }
     },
     "training_set": [
         "76.JPG",

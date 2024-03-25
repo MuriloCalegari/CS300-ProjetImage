@@ -3,6 +3,10 @@ import math
 
 parameters = None
 
+def reset_parameters():
+    global parameters
+    parameters = None
+
 def get_parameters():
     global parameters  # Add global keyword to access the global variable
     if(parameters is None):

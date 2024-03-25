@@ -10,6 +10,7 @@ def main():
           4. Generate squared images from dataset
           5. Test detect circles
           6. (Training) Find Hough Parameters
+          7. Run on one image
           """)
 
     option = input("Option: ")
@@ -35,6 +36,10 @@ def main():
         case "6":
             from modules.model.model_training import find_hough_parameters
             print(find_hough_parameters())
+        case "7":
+            from modules.model.circle_detection.hough_transform import detect_circles
+            image_path = input("Insert image path: ")
+            detect_circles(image_path)
         case _:
             print("Invalid option")
             main()
