@@ -198,7 +198,7 @@ def test_find_coins(dataset = "testing_set", parameters = get_parameters()):
             "recall": micro_average_recall,
             "f1": micro_average_f1
         },
-        "macro-average": {
+        "macro_average": {
             "precision": macro_average_precision,
             "recall": macro_average_recall,
             "f1": macro_average_f1
