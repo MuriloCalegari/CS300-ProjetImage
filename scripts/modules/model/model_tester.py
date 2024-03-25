@@ -128,7 +128,7 @@ def test_find_coins(dataset = "testing_set", parameters = get_parameters()):
         micro_average_fn += false_negatives_count
 
         precision = true_positives_count / (true_positives_count + false_positives_count) if (true_positives_count + false_positives_count) > 0 else 0
-        recall = true_positives_count / (true_positives_count + false_negatives_count)
+        recall = true_positives_count / (true_positives_count + false_negatives_count) if (true_positives_count + false_negatives_count) > 0 else 0
         f1_score = 0 if (precision == 0 or recall == 0) else 2 * (precision * recall) / (precision + recall)
 
         macro_average_precision_sum += precision
