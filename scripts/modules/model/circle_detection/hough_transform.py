@@ -108,6 +108,7 @@ window_name = 'Edge Map'
 title_trackbar = 'Min Threshold:'
 ratio = 3
 kernel_size = 3
+
 def CannyThreshold(val, src, src_gray):
     low_threshold = val
     img_blur = cv.blur(src_gray, (3,3))
@@ -123,14 +124,14 @@ def detect_cicles_opencv(image_path):
     if src is None:
         print ('Error opening image!')
         return -1
-    
+
     ## Rescale the image to fit in a max_res x max_res window or keep the original size if it's smaller
     scale = 1
     max_largest_dim = get_parameter("hough_parameters")["max_res"]
     if src.shape[0] > max_largest_dim or src.shape[1] > max_largest_dim:
         scale = max_largest_dim / max(src.shape[0], src.shape[1])
         src = cv.resize(src, (int(src.shape[1] * scale), int(src.shape[0] * scale)))
-    
+
     gray = cv.cvtColor(src, cv.COLOR_BGR2GRAY)
 
     gray = cv.medianBlur(gray, 5)
@@ -145,21 +146,23 @@ def detect_cicles_opencv(image_path):
     # gray = cv.GaussianBlur(gray, (3, 3), 0)
     # cv.imshow("Laplace", gray)
 
-    
-    # # Apply OTSU to the image
+    # Apply OTSU to the image
     # ret1, mask = cv.threshold(gray,0,255,cv.THRESH_BINARY+cv.THRESH_OTSU)
     # gray = cv.bitwise_and(gray, gray, mask=mask)
-    
+
     # Apply opening
     # gray = cv.medianBlur(gray, 9)
     # kernel = np.ones((3,3),np.uint8)
     # gray = cv.morphologyEx(gray, cv.MORPH_OPEN, kernel)
 
-    # Stack the images. src, mask, gray
+    # Show grayscale image
+    cv.imshow('Grayscale Image', cv.cvtColor(gray, cv.COLOR_GRAY2RGB))
+
     after_canny = CannyThreshold(0, src, gray)
 
-    compare = np.hstack((src, cv.cvtColor(gray, cv.COLOR_GRAY2RGB), after_canny))
-    
+    # Show Canny threshold image
+    cv.imshow('After Canny', after_canny)
+
     rows = gray.shape[0]
 
     parameters = get_hough_parameters()
@@ -178,8 +181,9 @@ def detect_cicles_opencv(image_path):
             param1=parameters["param1"], param2=parameters["param2"],
             minRadius=min_radius, maxRadius=max_radius)
 
-    output = set()
-    
+    #output = set()
+    output = []
+
     if circles is not None:
         circles = np.uint16(np.around(circles))
         circles = circles[0, :]
@@ -194,16 +198,26 @@ def detect_cicles_opencv(image_path):
             cv.circle(src, center, 1, (0, 100, 100), 3)
             # circle outline
             radius = i[2]
-            output.add(((int(i[0] * 1 / scale), int(i[1] * 1 / scale)), int(radius * 1 / scale)))
+            diameter = 2 * radius
+            #output.add(((int(i[0] * 1 / scale), int(i[1] * 1 / scale)), int(radius * 1 / scale)))
+            output.append(((int(i[0] * 1 / scale), int(i[1] * 1 / scale), int(radius * 1 / scale))))
             cv.circle(src, center, radius, (255, 0, 255), 3)
-    
+
+            text = f"{int(diameter)} mm"
+            text_position = (int(i[0] - 20), int(i[1] - 20))
+            cv.putText(src, text, text_position, cv.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+            
+
+    # Show detected circles
+    cv.imshow('Detected Circles', src)
+
     if(get_parameter("hough_parameters")["show_preview"]):
-        src = np.hstack((compare, src))
-        cv.imshow(f"detected circles {image_path}", src)
         cv.waitKey(0)
         cv.destroyAllWindows()
 
+    output = np.array(output)
     return output
+
 
 def get_hough_parameters():
     parameters = get_parameter("hough_parameters")
@@ -247,3 +261,34 @@ def detect_circles_skimage():
 
     ax.imshow(image, cmap=plt.cm.gray)
     plt.show()
+    
+    
+
+def extract_color_features(image_path, circles):
+    src = cv.imread(image_path, cv.IMREAD_COLOR)
+    color_features = []
+
+    for i in circles:
+        x, y, r = i
+   
+        crop = src[y-r:y+r, x-r:x+r]
+
+        lab_crop = cv.cvtColor(crop, cv.COLOR_BGR2LAB)
+
+        l_mean = np.mean(lab_crop[:, :, 0])
+        a_mean = np.mean(lab_crop[:, :, 1])
+        b_mean = np.mean(lab_crop[:, :, 2])
+
+        color_features.append(((l_mean, a_mean, b_mean), (x, y)))
+
+    for feature, (x, y) in color_features:
+        text = f"({feature[0]:.2f}, {feature[1]:.2f}, {feature[2]:.2f})"
+        text_position = (int(x - 100), int(y - 100))
+        cv.putText(src, text, text_position, cv.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+
+    # afficher l'image avec les vecteurs
+    cv.imshow('Color features', src)
+    cv.waitKey(0)
+    cv.destroyAllWindows()
+
+    return color_features
