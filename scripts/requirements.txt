@@ -1,3 +1,6 @@
 opencv-python
 matplotlib
 scikit-image
+scipy
+scikit-image
+imutils

@@ -1,14 +1,22 @@
 import json
 import math
 
+parameters = None
+
+def reset_parameters():
+    global parameters
+    parameters = None
+
 def get_parameters():
-    with open("./parameters.json", "r") as file:
-        return json.loads(file.read())
+    global parameters  # Add global keyword to access the global variable
+    if(parameters is None):
+        with open("./parameters.json", "r") as file:
+            parameters = json.loads(file.read())
+    
+    return parameters
 
 def get_parameter(parameter_name):
-    with open("./parameters.json", "r") as file:
-        parameters = json.loads(file.read())
-        return parameters[parameter_name]
+        return get_parameters()[parameter_name]
     
 def cut_image_in_square(image, center, size):
     """

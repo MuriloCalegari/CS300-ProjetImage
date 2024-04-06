@@ -64,8 +64,8 @@ def was_coin_found_given_truth(ground_truth, circle, original_image_shape, thres
 
 # Test the find_coins() method by computing the intersection with what we expect from the annotated images
 # 1. Load the testing dataset from the annotated JSON files. For each circle, 
-def test_find_coins():
-    testing_data = get_parameter("testing_set")
+def test_find_coins(dataset = "testing_set", parameters = get_parameters()):
+    testing_data = get_parameter(dataset)
 
     micro_average_tp = 0
     micro_average_fp = 0
@@ -75,11 +75,11 @@ def test_find_coins():
     macro_average_recall_sum = 0
 
     for image in testing_data:
-        print(f"Testing image: {image}")
+        print(f"\nTesting image: {image}")
         image_full_path = f"{get_parameter('image_path')}/{image}"
         annotated_image_path = f"{get_parameter('annotations_path')}/{image.split('.')[0]}.json"
 
-        detected_coins = find_coins(image_full_path, get_parameters())
+        detected_coins = find_coins(image_full_path, parameters)
         true_positives_count = 0
         false_positives_count = 0
         false_negatives_count = 0
@@ -128,7 +128,7 @@ def test_find_coins():
         micro_average_fn += false_negatives_count
 
         precision = true_positives_count / (true_positives_count + false_positives_count) if (true_positives_count + false_positives_count) > 0 else 0
-        recall = true_positives_count / (true_positives_count + false_negatives_count)
+        recall = true_positives_count / (true_positives_count + false_negatives_count) if (true_positives_count + false_negatives_count) > 0 else 0
         f1_score = 0 if (precision == 0 or recall == 0) else 2 * (precision * recall) / (precision + recall)
 
         macro_average_precision_sum += precision
@@ -191,6 +191,19 @@ def test_find_coins():
 
         # cv.imshow("Annotated image", side_by_side)
         # cv.waitKey(0)
+    
+    return {
+        "micro_average": {
+            "precision": micro_average_precision,
+            "recall": micro_average_recall,
+            "f1": micro_average_f1
+        },
+        "macro_average": {
+            "precision": macro_average_precision,
+            "recall": macro_average_recall,
+            "f1": macro_average_f1
+        }
+    }
 
 def compute_f1(masked_ground_truth, masked_model):
     """
@@ -213,8 +226,8 @@ def compute_f1(masked_ground_truth, masked_model):
     false_negatives_count = cv.countNonZero(false_negatives)
     # true_negatives_count = cv.countNonZero(true_negatives)
 
-    precision = true_positives_count / (true_positives_count + false_positives_count)
-    recall = true_positives_count / (true_positives_count + false_negatives_count)
+    precision = true_positives_count / (true_positives_count + false_positives_count) if (true_positives_count + false_positives_count) > 0 else 0
+    recall = true_positives_count / (true_positives_count + false_negatives_count) if (true_positives_count + false_negatives_count) > 0 else 0
 
     if(precision == 0 or recall == 0):
         return 0
@@ -223,8 +236,8 @@ def compute_f1(masked_ground_truth, masked_model):
 
     return f1
 
-def test_model():
-    testing_dataset = get_parameter("testing_set")
+def test_model(dataset = "testing_set"):
+    testing_dataset = get_parameter(dataset)
 
     for image in testing_dataset:
         print(f"Testing image: {image}")
