@@ -292,3 +292,36 @@ def extract_color_features(image_path, circles):
     cv.destroyAllWindows()
 
     return color_features
+
+def extract_features(image_path):
+    src = cv.imread(image_path)
+
+    circles = detect_circles(image_path)
+    color_features = extract_color_features(image_path, circles)
+
+    features = []
+    for color_feature, (x, y) in color_features:
+        circle = next((c for c in circles if c[0] == x and c[1] == y), None)
+        if circle is not None:
+            radius = circle[2]
+            diameter = 2 * radius
+            feature_vector = color_feature + (diameter,)
+            features.append(feature_vector)
+
+            text = f"[{feature_vector[0]:.2f}, {feature_vector[1]:.2f}, {feature_vector[2]:.2f}, {feature_vector[3]}]"
+            text_position = (int(x - 100), int(y - 100))
+            cv.putText(src, text, text_position, cv.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+
+
+    output_path = 'image_with_features_vectors.jpg'
+    cv.imwrite(output_path, src)
+    print(f"Image saved to {output_path}")
+
+
+    print("Features:")
+    print(" [mean color values, diameter]")
+    print("")
+    print(features)
+
+
+
