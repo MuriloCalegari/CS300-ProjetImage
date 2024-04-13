@@ -37,11 +37,14 @@ def main():
             from modules.model.model_training import find_hough_parameters
             print(find_hough_parameters())
         case "7":
-            from modules.model.circle_detection.hough_transform import detect_circles, extract_color_features
+            from modules.model.circle_detection.hough_transform import detect_circles, extract_color_features, extract_features
             image_path = input("Insert image path: ")
-            circles = detect_circles(image_path)  
-            color_features = extract_color_features(image_path, circles) 
-            print("Color features:", color_features)
+            #circles = detect_circles(image_path)  
+            #color_features = extract_color_features(image_path, circles) 
+            #print("Color features:", color_features)
+            features = extract_features(image_path)
+            print("Features:", features)
+            
         case _:
             print("Invalid option")
             main()
