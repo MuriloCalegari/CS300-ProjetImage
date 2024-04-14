@@ -184,23 +184,20 @@ def detect_cicles_opencv(image_path):
     #output = set()
     output = []
 
-    if circles is not None:
-        circles = np.uint16(np.around(circles))
-        circles = circles[0, :]
+    if circles is not None and circles.any():
+        circles = np.uint16(np.around(circles[0, :]))
 
         if(get_parameter("hough_parameters")["post_processing"]["remove_overlapping"]):
             circles = remove_overlapping_circles(circles)
 
         for i in circles:
-            print(f"Found circle! {i}")
             center = (i[0], i[1])
-            # circle center
-            cv.circle(src, center, 1, (0, 100, 100), 3)
-            # circle outline
             radius = i[2]
             diameter = 2 * radius
-            #output.add(((int(i[0] * 1 / scale), int(i[1] * 1 / scale)), int(radius * 1 / scale)))
-            output.append(((int(i[0] * 1 / scale), int(i[1] * 1 / scale), int(radius * 1 / scale))))
+            scaled_center = (int(center[0] * 1 / scale), int(center[1] * 1 / scale))
+            scaled_radius = int(radius * 1 / scale)
+            output.append((scaled_center[0], scaled_center[1], scaled_radius, diameter))
+
             cv.circle(src, center, radius, (255, 0, 255), 3)
 
             text = f"{int(diameter)} mm"
@@ -266,62 +263,21 @@ def detect_circles_skimage():
 
 def extract_color_features(image_path, circles):
     src = cv.imread(image_path, cv.IMREAD_COLOR)
-    color_features = []
-
-    for i in circles:
-        x, y, r = i
-   
+    features_list = []
+    for (x, y, r, diameter) in circles:
         crop = src[y-r:y+r, x-r:x+r]
-
         lab_crop = cv.cvtColor(crop, cv.COLOR_BGR2LAB)
-
         l_mean = np.mean(lab_crop[:, :, 0])
         a_mean = np.mean(lab_crop[:, :, 1])
         b_mean = np.mean(lab_crop[:, :, 2])
-
-        color_features.append(((l_mean, a_mean, b_mean), (x, y)))
-
-    for feature, (x, y) in color_features:
-        text = f"({feature[0]:.2f}, {feature[1]:.2f}, {feature[2]:.2f})"
-        text_position = (int(x - 100), int(y - 100))
-        cv.putText(src, text, text_position, cv.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-
-    # afficher l'image avec les vecteurs
-    cv.imshow('Color features', src)
-    cv.waitKey(0)
-    cv.destroyAllWindows()
-
-    return color_features
-
-def extract_features(image_path):
-    src = cv.imread(image_path)
-
-    circles = detect_circles(image_path)
-    color_features = extract_color_features(image_path, circles)
-
-    features = []
-    for color_feature, (x, y) in color_features:
-        circle = next((c for c in circles if c[0] == x and c[1] == y), None)
-        if circle is not None:
-            radius = circle[2]
-            diameter = 2 * radius
-            feature_vector = color_feature + (diameter,)
-            features.append(feature_vector)
-
-            text = f"[{feature_vector[0]:.2f}, {feature_vector[1]:.2f}, {feature_vector[2]:.2f}, {feature_vector[3]}]"
-            text_position = (int(x - 100), int(y - 100))
-            cv.putText(src, text, text_position, cv.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+        features_list.append([diameter, l_mean, a_mean, b_mean])
+    return features_list
 
 
-    output_path = 'image_with_features_vectors.jpg'
-    cv.imwrite(output_path, src)
-    print(f"Image saved to {output_path}")
-
-
-    print("Features:")
-    print(" [mean color values, diameter]")
-    print("")
-    print(features)
-
-
-
+def create_features_vector(image_path):
+    circles = detect_cicles_opencv(image_path)
+    if circles is not None:
+        color_features = extract_color_features(image_path, circles)
+        return color_features
+    else:
+        return []
