@@ -14,9 +14,8 @@ def visualize_hog_features(image, cell_size=(8, 8), block_size=(2, 2), nbins=9):
     plt.show()
     return hog_features
 
-# Exemple d'image
+
 image = cv.imread('/home/yassfkh/Desktop/ProjetImage/ProjetImage/scripts/cache/training_set/2_euro/116_0_2_euro.jpg')
 
-# Visualisation des caractéristiques HOG et récupération du vecteur de texture
 hog_features = visualize_hog_features(image)
 print("HOG Features:", hog_features)
