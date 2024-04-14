@@ -22,6 +22,7 @@ from modules.model.circle_detection.enchanced_hough_search import find_circles
 
 import cv2 as cv
 import math
+import skimage.feature as skf
 
 # Load picture and detect edges
 def detect_circles(image_path):
@@ -261,23 +262,47 @@ def detect_circles_skimage():
     
     
 
-def extract_color_features(image_path, circles):
+def extract_color_and_hog_features(image_path, circles):
     src = cv.imread(image_path, cv.IMREAD_COLOR)
     features_list = []
     for (x, y, r, diameter) in circles:
-        crop = src[y-r:y+r, x-r:x+r]
+        x1 = max(x - r, 0)
+        y1 = max(y - r, 0)
+        x2 = min(x + r, src.shape[1])
+        y2 = min(y + r, src.shape[0])
+        crop = src[y1:y2, x1:x2]
+        
+        if crop.size == 0:
+            continue 
+
         lab_crop = cv.cvtColor(crop, cv.COLOR_BGR2LAB)
         l_mean = np.mean(lab_crop[:, :, 0])
         a_mean = np.mean(lab_crop[:, :, 1])
         b_mean = np.mean(lab_crop[:, :, 2])
-        features_list.append([diameter, l_mean, a_mean, b_mean])
+        
+        hog_features, hog_image = extract_hog_features(crop)  
+        
+        features_list.append([diameter, l_mean, a_mean, b_mean, hog_features.tolist()])
+        
+        plt.figure(figsize=(10, 10))
+        plt.imshow(hog_image, cmap='gray')
+        plt.title(f'HOG features for Circle at ({x}, {y})')
+        plt.axis('off')
+        plt.show()
+
     return features_list
+
+
+def extract_hog_features(region, cell_size=(8, 8), block_size=(2, 2), nbins=9):
+    gray_region = cv.cvtColor(region, cv.COLOR_BGR2GRAY)
+    hog_features, hog_image = skf.hog(gray_region, orientations=nbins, pixels_per_cell=cell_size, cells_per_block=block_size, visualize=True)
+    return hog_features, hog_image
 
 
 def create_features_vector(image_path):
     circles = detect_cicles_opencv(image_path)
-    if circles is not None:
-        color_features = extract_color_features(image_path, circles)
+    if circles.size > 0:
+        color_features = extract_color_and_hog_features(image_path, circles)
         return color_features
     else:
         return []
