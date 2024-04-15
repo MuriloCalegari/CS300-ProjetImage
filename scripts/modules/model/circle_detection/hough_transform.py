@@ -208,7 +208,7 @@ def detect_cicles_opencv(image_path):
 
             cv.circle(src, center, radius, (255, 0, 255), 3)
 
-            text = f"{int(diameter)} mm"
+            text = f"{int(diameter)}px"
             text_position = (int(i[0] - 20), int(i[1] - 20))
             cv.putText(src, text, text_position, cv.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
             
@@ -266,8 +266,7 @@ def detect_circles_skimage():
 
     ax.imshow(image, cmap=plt.cm.gray)
     plt.show()
-    
-   
+"""     
 def extract_color_and_hog_features(image_path, circles):
     src = cv.imread(image_path, cv.IMREAD_COLOR)
     features_list = []
@@ -281,25 +280,34 @@ def extract_color_and_hog_features(image_path, circles):
         if crop.size == 0:
             continue 
 
-        resized_crop = cv.resize(crop, (200, 200))
+        resized_crop = cv.resize(crop, (500, 500))
 
         lab_crop = cv.cvtColor(resized_crop, cv.COLOR_BGR2LAB)
         l_mean = np.mean(lab_crop[:, :, 0])
         a_mean = np.mean(lab_crop[:, :, 1])
         b_mean = np.mean(lab_crop[:, :, 2])
         
-        hog_features, hog_image = extract_hog_features(resized_crop)  
+        hog_features, hog_image = extract_hog_features(resized_crop)  #
+        hog_features_1d = hog_features.reshape(-1)
+        hog_features_normalized = StandardScaler().fit_transform(hog_features_1d.reshape(-1, 1))
         
-        features_list.append([diameter, l_mean, a_mean, b_mean, hog_features.tolist()])
+        mean = np.mean(hog_features_normalized)
+        variance = np.var(hog_features_normalized)
+
+        print(f"Moyenne : {mean}")
+        print(f"Variance : {variance}")
+
+        features_list.append([diameter, l_mean, a_mean, b_mean, hog_features_normalized.tolist()])
+
         
            
         plt.figure(figsize=(10, 10))
         plt.imshow(hog_image, cmap='gray')
-        plt.title(f'HOG features for circle at ({x}, {y})')
+        plt.title(f'HOG features for Circle at ({x}, {y})')
         plt.axis('off')
         plt.show() 
 
-    return features_list 
+    return features_list   """
     
 def extract_color_features(image_path, circles):
     src = cv.imread(image_path, cv.IMREAD_COLOR)
@@ -325,7 +333,7 @@ def extract_color_features(image_path, circles):
 
     return features_list
     
-""" def extract_color_and_hog_features(image_path, circles, target_size=(1000, 1000)):
+def extract_color_and_hog_features(image_path, circles, target_size=(1000, 1000)):
     src = cv.imread(image_path, cv.IMREAD_COLOR)
     features_list = []
     
@@ -339,13 +347,13 @@ def extract_color_features(image_path, circles):
         if crop.size == 0:
             continue 
 
-        # Calculate padding amounts
+        # calculate padding amounts
         top_pad = (target_size[0] - crop.shape[0]) // 2
         bottom_pad = target_size[0] - crop.shape[0] - top_pad
         left_pad = (target_size[1] - crop.shape[1]) // 2
         right_pad = target_size[1] - crop.shape[1] - left_pad
 
-        # Pad the image with zeros
+        # pad the image with zeros
         padded_crop = cv.copyMakeBorder(crop, top_pad, bottom_pad, left_pad, right_pad, cv.BORDER_CONSTANT, value=(0, 0, 0))
 
         lab_crop = cv.cvtColor(padded_crop, cv.COLOR_BGR2LAB)
@@ -363,7 +371,7 @@ def extract_color_features(image_path, circles):
         plt.axis('off')
         plt.show() 
 
-    return features_list    """
+    return features_list    
 
 
 
@@ -377,7 +385,7 @@ def create_features_vector(image_path):
     circles = detect_cicles_opencv(image_path)
     if circles.size > 0:
         color_features = extract_color_and_hog_features(image_path, circles)
-        color_features = extract_color_features(image_path, circles)
+        #color_features = extract_color_features(image_path, circles)
         return color_features
     else:
         return []
