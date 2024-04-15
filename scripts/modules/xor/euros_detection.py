@@ -78,7 +78,7 @@ def classify_coin(coin_image, ref_1_euro, ref_2_euro):
     return classification
 
 
-coin_image = cv2.imread('/home/yassfkh/Desktop/ProjetImage/ProjetImage/scripts/cache/testing_set/1_euro/82_0_1_euro.jpg')
+coin_image = cv2.imread('/Volumes/SSD/ProjetImage/ProjetImage/scripts/cache/testing_set/1_euro/212_2_1_euro.jpg')
 ref_1_euro = cv2.imread('unE.png')
 ref_2_euro = cv2.imread('deuxE.jpg')
 

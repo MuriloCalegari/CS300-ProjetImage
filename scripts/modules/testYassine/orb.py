@@ -3,8 +3,8 @@ import numpy as np
 import argparse
 
 parser = argparse.ArgumentParser(description='Code for Feature Matching with FLANN tutorial.')
-parser.add_argument('--input1', help='Path to input image 1.', default='/home/yassfkh/Desktop/ProjetImage/ProjetImage/scripts/cache/testing_set/5_centimes/212_1_5_centimes.jpg')
-parser.add_argument('--input2', help='Path to input image 2.', default='/home/yassfkh/Desktop/ProjetImage/ProjetImage/scripts/cache/testing_set/20_centimes/44_0_20_centimes.jpg')
+parser.add_argument('--input1', help='Path to input image 1.', default='/Volumes/SSD/ProjetImage/ProjetImage/scripts/cache/training_set/1_centime/3_2_1_centime.jpg')
+parser.add_argument('--input2', help='Path to input image 2.', default='/Volumes/SSD/ProjetImage/ProjetImage/scripts/cache/training_set/2_euro/16_0_2_euro.JPG')
 args = parser.parse_args()
 
 img1 = cv.imread(cv.samples.findFile(args.input1), cv.IMREAD_GRAYSCALE)
@@ -22,6 +22,13 @@ keypoints2, descriptors2 = orb.detectAndCompute(img2, None)
 # Since ORB is a binary descriptor, NORM_HAMMING should be used
 matcher = cv.DescriptorMatcher_create(cv.DescriptorMatcher_BRUTEFORCE_HAMMING)
 matches = matcher.match(descriptors1, descriptors2)
+
+good = []
+for i, m in enumerate(matches):
+    if i < len(matches) - 1 and m.distance < 0.7 * matches[i+1].distance:
+        good.append(m)
+
+print(len(good))
 
 #-- Draw matches
 img_matches = np.empty((max(img1.shape[0], img2.shape[0]), img1.shape[1]+img2.shape[1], 3), dtype=np.uint8)

@@ -3,7 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-
 def display_image(image, title="Image"):
     plt.imshow(cv.cvtColor(image, cv.COLOR_BGR2RGB))
     plt.title(title)
@@ -48,7 +47,6 @@ def circular_hough_transform(image, radius_range, search_threshold):
 
     return circles
 
-
 def apply_closing(image, kernel_size):
     kernel = np.ones((kernel_size, kernel_size), np.uint8)
     closing = cv.morphologyEx(image, cv.MORPH_CLOSE, kernel)
@@ -66,8 +64,7 @@ def normalize_image(image):
     return normalized_image
 
 
-image = cv.imread("/home/yassfkh/Desktop/ProjetImage/ProjetImage/Images/211.jpg", 1)
-
+image = cv.imread("/Volumes/SSD/ProjetImage/ProjetImage/Images/267.png", 1)
 
 
 resized_image = resize_image(image, 400, 400)
@@ -110,27 +107,27 @@ plt.axis('off')
 
 plt.subplot(3, 4, 6)
 plt.imshow(thresholdedImage, cmap='gray')
-plt.title("Thresholded Image")
+plt.title("Thresholded image")
 plt.axis('off')
 
 plt.subplot(3, 4, 7)
 plt.imshow(thresholdedImageBeforeLaplace, cmap='gray')
-plt.title("Thresholded before Laplace Image")
+plt.title("Thresholded before Laplace image")
 plt.axis('off')
 
 plt.subplot(3, 4, 8)
 plt.imshow(closedImage, cmap='gray')
-plt.title("Closed Image")
+plt.title("Closed image")
 plt.axis('off')
 
 plt.subplot(3, 4, 9)
 plt.imshow(openImage, cmap='gray')
-plt.title("Opened Image")
+plt.title("Opened image")
 plt.axis('off')
 
 plt.subplot(3, 4, 10)  
 plt.imshow(normalized_blurredImage, cmap='gray') 
-plt.title("Normalized Blurred Image")
+plt.title("Normalized blurred image")
 plt.axis('off')
 
 circles_detected = circular_hough_transform(blurredImage, radius_range=[20, 100], search_threshold=50)
