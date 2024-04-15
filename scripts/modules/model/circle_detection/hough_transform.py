@@ -182,7 +182,7 @@ def detect_cicles_opencv(image_path):
         max_radius = int(denormalize_1d(parameters["max_radius"], gray.shape))
         minDist = int(denormalize_1d(parameters["minDist"], gray.shape))
 
-        print(f"Running hough transform with parameters: {parameters}")
+        print(f"Running Hough Transform with parameters: {parameters}")
 
         print(f"Min radius: {min_radius}, Max radius: {max_radius}, minDist: {minDist}")
         circles = cv.HoughCircles(gray, cv.HOUGH_GRADIENT_ALT, parameters["dp"], minDist=minDist,
@@ -295,7 +295,7 @@ def extract_color_and_hog_features(image_path, circles):
            
         plt.figure(figsize=(10, 10))
         plt.imshow(hog_image, cmap='gray')
-        plt.title(f'HOG features for Circle at ({x}, {y})')
+        plt.title(f'HOG features for circle at ({x}, {y})')
         plt.axis('off')
         plt.show() 
 
