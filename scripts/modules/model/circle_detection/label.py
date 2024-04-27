@@ -1,14 +1,14 @@
 import os
 import cv2 as cv
 import csv
-from modules.model.circle_detection.hough_transform import detect_cicles_opencv, extract_color_features
+from modules.model.circle_detection.hough_transform import detect_cicles_opencv, extract_hog_features
 
 def label_pieces(image_folder, output_file):
 
     with open(output_file, mode='a', newline='') as file:
         writer = csv.writer(file)
         
-        writer.writerow(['label', 'diameter', 'color_l_mean', 'color_a_mean', 'color_b_mean'])
+        writer.writerow(['label', 'diameter', 'hog_features'])
 
         for image_file in os.listdir(image_folder):
             if image_file.endswith('.jpg'):
@@ -32,12 +32,14 @@ def label_pieces(image_folder, output_file):
                         cv.waitKey(0)
                         label = input(f"Enter the label for this piece (diameter: {diameter[3]} px): ")
                         
-                  
-                        features = extract_color_features(image_path, [diameter])
-                        diameter, l_mean, a_mean, b_mean = features[0]
-
-                      
-                        writer.writerow([label, diameter, l_mean, a_mean, b_mean])
+                        # Extraction des caractéristiques de texture
+                        crop = image[y - r:y + r, x - r:x + r]
+                        hog_features, _ = extract_hog_features(crop)
+                        
+                        # Convertir les caractéristiques HOG en une chaîne de caractères pour l'enregistrement dans le fichier CSV
+                        hog_features_str = ','.join(map(str, hog_features))
+                        
+                        writer.writerow([label, diameter, hog_features_str])
                         cv.destroyAllWindows()
 
 train_image_folder = '/Volumes/SSD/ProjetImage/ProjetImage/DividedDataset/testset'
