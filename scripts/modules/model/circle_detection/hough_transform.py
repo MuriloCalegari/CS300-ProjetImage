@@ -31,6 +31,12 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import classification_report, confusion_matrix
 import json
 
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+
+scaler = StandardScaler()
+
+
 # Load picture and detect edges
 def detect_circles(image_path):
     """
@@ -182,7 +188,7 @@ def detect_cicles_opencv(image_path):
         max_radius = int(denormalize_1d(parameters["max_radius"], gray.shape))
         minDist = int(denormalize_1d(parameters["minDist"], gray.shape))
 
-        print(f"Running Hough Transform with parameters: {parameters}")
+        print(f"Running hough transform with parameters: {parameters}")
 
         print(f"Min radius: {min_radius}, Max radius: {max_radius}, minDist: {minDist}")
         circles = cv.HoughCircles(gray, cv.HOUGH_GRADIENT_ALT, parameters["dp"], minDist=minDist,
@@ -208,7 +214,7 @@ def detect_cicles_opencv(image_path):
 
             cv.circle(src, center, radius, (255, 0, 255), 3)
 
-            text = f"{int(diameter)}px"
+            text = f"{int(diameter)} mm"
             text_position = (int(i[0] - 20), int(i[1] - 20))
             cv.putText(src, text, text_position, cv.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
             
@@ -266,7 +272,8 @@ def detect_circles_skimage():
 
     ax.imshow(image, cmap=plt.cm.gray)
     plt.show()
-"""     
+    
+   
 def extract_color_and_hog_features(image_path, circles):
     src = cv.imread(image_path, cv.IMREAD_COLOR)
     features_list = []
@@ -280,7 +287,7 @@ def extract_color_and_hog_features(image_path, circles):
         if crop.size == 0:
             continue 
 
-        resized_crop = cv.resize(crop, (500, 500))
+        resized_crop = cv.resize(crop, (300, 300))
 
         lab_crop = cv.cvtColor(resized_crop, cv.COLOR_BGR2LAB)
         l_mean = np.mean(lab_crop[:, :, 0])
@@ -299,15 +306,15 @@ def extract_color_and_hog_features(image_path, circles):
 
         features_list.append([diameter, l_mean, a_mean, b_mean, hog_features_normalized.tolist()])
 
-        
-           
+        """ 
         plt.figure(figsize=(10, 10))
         plt.imshow(hog_image, cmap='gray')
         plt.title(f'HOG features for Circle at ({x}, {y})')
         plt.axis('off')
         plt.show() 
+        """
 
-    return features_list   """
+    return features_list 
     
 def extract_color_features(image_path, circles):
     src = cv.imread(image_path, cv.IMREAD_COLOR)
@@ -322,7 +329,7 @@ def extract_color_features(image_path, circles):
         if crop.size == 0:
             continue  
         
-        resized_crop = cv.resize(crop, (200, 200))
+        resized_crop = cv.resize(crop, (10, 10))
 
         lab_crop = cv.cvtColor(resized_crop, cv.COLOR_BGR2LAB)
         l_mean = np.mean(lab_crop[:, :, 0])
@@ -333,7 +340,7 @@ def extract_color_features(image_path, circles):
 
     return features_list
     
-def extract_color_and_hog_features(image_path, circles, target_size=(1000, 1000)):
+""" def extract_color_and_hog_features(image_path, circles, target_size=(1000, 1000)):
     src = cv.imread(image_path, cv.IMREAD_COLOR)
     features_list = []
     
@@ -347,13 +354,13 @@ def extract_color_and_hog_features(image_path, circles, target_size=(1000, 1000)
         if crop.size == 0:
             continue 
 
-        # calculate padding amounts
+        # Calculate padding amounts
         top_pad = (target_size[0] - crop.shape[0]) // 2
         bottom_pad = target_size[0] - crop.shape[0] - top_pad
         left_pad = (target_size[1] - crop.shape[1]) // 2
         right_pad = target_size[1] - crop.shape[1] - left_pad
 
-        # pad the image with zeros
+        # Pad the image with zeros
         padded_crop = cv.copyMakeBorder(crop, top_pad, bottom_pad, left_pad, right_pad, cv.BORDER_CONSTANT, value=(0, 0, 0))
 
         lab_crop = cv.cvtColor(padded_crop, cv.COLOR_BGR2LAB)
@@ -371,7 +378,7 @@ def extract_color_and_hog_features(image_path, circles, target_size=(1000, 1000)
         plt.axis('off')
         plt.show() 
 
-    return features_list    
+    return features_list    """
 
 
 
