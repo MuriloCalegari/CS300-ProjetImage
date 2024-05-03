@@ -6,6 +6,7 @@ import cv2 as cv
 sys.path.append("..")  # Add parent folder to sys.path
 
 from modules.utils import get_parameter, get_parameters
+from modules.model.metrics_util import compute_jaccard_index
 from modules.model.model_wrapper import detect_coins
 from modules.model.model_wrapper import find_coins
 
@@ -34,10 +35,10 @@ def detected_coins_contains(detected_coins, label, center):
             return coin
     return None
 
-def was_coin_found_given_truth(ground_truth, circle, original_image_shape, threshold=0.8):
+def was_coin_found_given_truth(ground_truth, circle, original_image_shape, threshold=0.5):
     """
     Given a set of ground truth circles and a detected circle,
-    return True if the intersection area between the detected circle and at least one of the ground truth circles
+    return True if the jaccard index between the detected circle and at least one of the ground truth circles
     is greater than the threshold, else False.
 
     Args:
@@ -45,7 +46,7 @@ def was_coin_found_given_truth(ground_truth, circle, original_image_shape, thres
         circle (tuple): A tuple (center, radius).
 
     Returns:
-        bool: True if the detected circle is within the radius of any of the ground truth circles, else False.
+        truth: Corresponding ground truth circle if the detected circle is found, else None.
     """
 
     for truth in ground_truth:    
@@ -55,16 +56,39 @@ def was_coin_found_given_truth(ground_truth, circle, original_image_shape, thres
         truth_mask = np.zeros(original_image_shape, np.uint8)
         cv.circle(truth_mask, truth[0], truth[1], (255, 255, 255), -1)
 
-        f1_score =compute_f1(truth_mask, circle_mask)
+        # f1_score = compute_f1(truth_mask, circle_mask)
+        jaccard_index = compute_jaccard_index(truth_mask, circle_mask)
         
-        if(f1_score > threshold):
+        if(jaccard_index > threshold):
             return truth
 
     return None
 
+def is_the_same_detected_coin(detected_coin, circle, original_image_shape, threshold=0.5):
+    """
+    Given a detected coin and a ground truth circle, return True if the detected coin is the same as the ground truth circle,
+    i.e. the jaccard index between the detected coin and the ground truth circle is greater than the threshold, else False.
+
+    Args:
+        detected_coin (dict): A tuple (label, center, radius).
+        circle (dict): A tuple (label, center, radius).
+
+    Returns:
+        bool: True if the detected coin is the same as the ground truth circle, else False.
+    """
+    circle_mask = np.zeros(original_image_shape, np.uint8)
+    cv.circle(circle_mask, circle[1], circle[2], (255, 255, 255), -1)
+
+    detected_mask = np.zeros(original_image_shape, np.uint8)
+    cv.circle(detected_mask, detected_coin[1], detected_coin[2], (255, 255, 255), -1)
+
+    jaccard_index = compute_jaccard_index(circle_mask, detected_mask)
+
+    return jaccard_index > threshold
+
 # Test the find_coins() method by computing the intersection with what we expect from the annotated images
-# 1. Load the testing dataset from the annotated JSON files. For each circle, 
-def test_find_coins(dataset = "testing_set", parameters = get_parameters()):
+# 1. Load the testing dataset from the annotated JSON files.
+def test_find_coins(dataset = "validation_set", parameters = get_parameters()):
     testing_data = get_parameter(dataset)
 
     micro_average_tp = 0
@@ -164,33 +188,6 @@ def test_find_coins(dataset = "testing_set", parameters = get_parameters()):
 
     print(f"Macro-Average results:")
     print(f"Precision: {macro_average_precision}, Recall: {macro_average_recall}, F1: {macro_average_f1}")
-
-        # # Compute intersection of masked_ground_truth and masked_model
-        # true_positives = cv.bitwise_and(masked_ground_truth, masked_model)
-        # false_positives = cv.subtract(masked_model, masked_ground_truth)
-        # false_negatives = cv.subtract(masked_ground_truth, masked_model)
-        # true_negatives = cv.bitwise_not(cv.bitwise_or(masked_ground_truth, masked_model))
-
-        # # Convert each to gray scale
-        # true_positives = cv.cvtColor(true_positives, cv.COLOR_BGR2GRAY)
-        # false_positives = cv.cvtColor(false_positives, cv.COLOR_BGR2GRAY)
-        # false_negatives = cv.cvtColor(false_negatives, cv.COLOR_BGR2GRAY)
-        # true_negatives = cv.cvtColor(true_negatives, cv.COLOR_BGR2GRAY)
-
-        # # Now count the number of pixels which are still 1
-        # true_positives_count = cv.countNonZero(true_positives)
-        # false_positives_count = cv.countNonZero(false_positives)
-        # false_negatives_count = cv.countNonZero(false_negatives)
-        # true_negatives_count = cv.countNonZero(true_negatives)
-
-        # total_pixels = image_data.shape[0] * image_data.shape[1]
-
-        # # Compute the accuracy
-        # accuracy = (true_positives_count + true_negatives_count) / total_pixels
-        # print(f"Accuracy: {accuracy}")
-
-        # cv.imshow("Annotated image", side_by_side)
-        # cv.waitKey(0)
     
     return {
         "micro_average": {
@@ -205,45 +202,45 @@ def test_find_coins(dataset = "testing_set", parameters = get_parameters()):
         }
     }
 
-def compute_f1(masked_ground_truth, masked_model):
+def find_test_coin_in_predicted_set(predicted_coins, test_coin, original_image_shape, threshold=0.5):
     """
-    Compute the F1 score given the ground truth and the model's output.
+    Given a set of predicted coins and a test coin, return the predicted coin that matches the test coin.
+
+    Args:
+        predicted_coins (list): A list of tuples (center, radius).
+        test_coin (tuple): A tuple (center, radius).
+        original_image_shape (tuple): The shape of the original image.
+        threshold (float): The threshold for the Jaccard index.
     """
-    true_positives = cv.bitwise_and(masked_ground_truth, masked_model)
-    false_positives = cv.subtract(masked_model, masked_ground_truth)
-    false_negatives = cv.subtract(masked_ground_truth, masked_model)
-    true_negatives = cv.bitwise_not(cv.bitwise_or(masked_ground_truth, masked_model))
+    for found_coin in predicted_coins:
+        found_coin_label = found_coin[0]
+        test_coin_label = test_coin[0]
+        if(is_the_same_detected_coin(found_coin, test_coin, original_image_shape, threshold)
+                and found_coin_label == test_coin_label):
+            return found_coin
 
-    # Convert each to gray scale
-    true_positives = cv.cvtColor(true_positives, cv.COLOR_BGR2GRAY)
-    false_positives = cv.cvtColor(false_positives, cv.COLOR_BGR2GRAY)
-    false_negatives = cv.cvtColor(false_negatives, cv.COLOR_BGR2GRAY)
-    true_negatives = cv.cvtColor(true_negatives, cv.COLOR_BGR2GRAY)
+    return None
 
-    # Now count the number of pixels which are still 1
-    true_positives_count = cv.countNonZero(true_positives)
-    false_positives_count = cv.countNonZero(false_positives)
-    false_negatives_count = cv.countNonZero(false_negatives)
-    # true_negatives_count = cv.countNonZero(true_negatives)
-
-    precision = true_positives_count / (true_positives_count + false_positives_count) if (true_positives_count + false_positives_count) > 0 else 0
-    recall = true_positives_count / (true_positives_count + false_negatives_count) if (true_positives_count + false_negatives_count) > 0 else 0
-
-    if(precision == 0 or recall == 0):
-        return 0
-
-    f1 = 2 * (precision * recall) / (precision + recall)
-
-    return f1
-
-def test_model(dataset = "testing_set"):
+def test_model(dataset = "validation_set"):
     testing_dataset = get_parameter(dataset)
 
+    micro_average_tp = 0
+    micro_average_fp = 0
+    micro_average_fn = 0
+
+    macro_average_precision_sum = 0
+    macro_average_recall_sum = 0
+
     for image in testing_dataset:
-        print(f"Testing image: {image}")
+        print(f"\nTesting image: {image}")
         detected_coins = detect_coins(image, get_parameters())
 
+        true_positives_count = 0
+        false_positives_count = 0
+        false_negatives_count = 0
+
         annotated_image_path = f"{get_parameter('annotations_path')}/{image.split('.')[0]}.json"
+        image_full_path = f"{get_parameter('image_path')}/{image}"
         with open(annotated_image_path, "r") as file:
             shapes = json.loads(file.read())['shapes']
             found_coins = set() # A set of tuples (label, center, radius)
@@ -251,15 +248,58 @@ def test_model(dataset = "testing_set"):
 
             for shape in shapes:
                 center = tuple(shape['points'][0])
+                center = tuple(map(int, center))
                 label = shape['label']
 
-                found_coin = detected_coins_contains(detected_coins, label, center)
+                coin = (label, center, int(euclidean_distance(center, shape['points'][1])))
+                image_shape = cv.imread(image_full_path).shape
 
-                if found_coin is not None:
-                    found_coins.add(found_coin)
-                    detected_coins.remove(found_coin) # Each coin should only "be found" once
+                correctly_found_and_labeled_coin = find_test_coin_in_predicted_set(detected_coins, coin, image_shape)
+
+                if correctly_found_and_labeled_coin is not None:
+                    found_coins.add(correctly_found_and_labeled_coin)
+                    detected_coins.remove(correctly_found_and_labeled_coin) # Each coin should only "be found" once
+                    true_positives_count += 1
                 else:
-                    not_found = (label, center, euclidean_distance(center, shape['points'][1]))
+                    not_found = (label, center, int(euclidean_distance(center, shape['points'][1])))
                     not_found_coins.add(not_found)
+                    false_negatives_count += 1
+            
+            false_positives_count = len(detected_coins)
+
+            # Add to the global metrics
+            micro_average_tp += true_positives_count
+            micro_average_fp += false_positives_count
+            micro_average_fn += false_negatives_count
+
+            precision = true_positives_count / (true_positives_count + false_positives_count) if (true_positives_count + false_positives_count) > 0 else 0
+            recall = true_positives_count / (true_positives_count + false_negatives_count) if (true_positives_count + false_negatives_count) > 0 else 0
+            f1_score = 0 if (precision == 0 or recall == 0) else 2 * (precision * recall) / (precision + recall)
+
+            macro_average_precision_sum += precision
+            macro_average_recall_sum += recall
+
             print(f"Found coins: {found_coins}")
             print(f"Missed coins: {not_found_coins}")
+            print(f"TP: {true_positives_count}, FP: {false_positives_count}, FN: {false_negatives_count}")
+
+    print("\n\nOverral results:")
+    print(f"TP: {micro_average_tp}, FP: {micro_average_fp}, FN: {micro_average_fn}")
+    precision = micro_average_tp / (micro_average_tp + micro_average_fp) if (micro_average_tp + micro_average_fp) > 0 else 0
+    recall = micro_average_tp / (micro_average_tp + micro_average_fn) if (micro_average_tp + micro_average_fn) > 0 else 0
+    f1_score = 0 if (precision == 0 or recall == 0) else 2 * (precision * recall) / (precision + recall)
+    print("\nMicro-Average results:")
+    print(f"Precision: {precision}, Recall: {recall}, F1: {f1_score}")
+
+    # The macro-average is the average precision and recall over all the images
+    print("\nMacro-Average results:")
+    macro_average_precision = macro_average_precision_sum / len(testing_dataset)
+    macro_average_recall = macro_average_recall_sum / len(testing_dataset)
+    macro_average_f1 = 0 if (macro_average_precision == 0 or macro_average_recall == 0) else 2 * (macro_average_precision * macro_average_recall) / (macro_average_precision + macro_average_recall)
+    print(f"Precision: {macro_average_precision}, Recall: {macro_average_recall}, F1: {macro_average_f1}")
+
+    return {
+        "precision": precision,
+        "recall": recall,
+        "f1": f1_score
+    }

@@ -26,15 +26,14 @@ def detect_coins(image_file, parameters):
         ...
     )
     """
-    # Load all images using matplotlib
     image_path = join(parameters['image_path'], image_file)
 
     # Detect coins in the image
     coins = find_coins(image_path, parameters)
 
-    labeled_coins = label_coins(coins, parameters)
+    labeled_coins = label_coins(image_path, coins, parameters)
 
-    return set()
+    return labeled_coins
 
 def find_coins(image_path, parameters):
     """
@@ -49,5 +48,6 @@ def find_coins(image_path, parameters):
     """
     return detect_circles(image_path)
 
-def label_coins(coins, parameters):
-    return set()
+def label_coins(image_path, coins, parameters):
+    # For each coin just add a dummy label
+    return [(f"50_centimes", center, radius) for i, (center, radius) in enumerate(coins)]

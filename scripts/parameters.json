@@ -2,8 +2,8 @@
     "image_path": "../Images",
     "annotations_path": "../Images/Annotated",
     "hough_parameters": {
-        "max_res": 1024,
-        "show_preview": true,
+        "max_res": 2048,
+        "show_preview": false,
         "use_default_hough": false,
         "apply_laplace": false,
         "post_processing": {
@@ -203,7 +203,7 @@
         "200.jpg",
         "154.jpg"
     ],
-    "validation_set": [
+    "testing_set": [
         "244.jpg",
         "238.jpg",
         "248.jpg",
@@ -262,7 +262,7 @@
         "268.jpg",
         "251.jpg"
     ],
-    "testing_set": [
+    "validation_set": [
         "112.jpg",
         "232.jpg",
         "56.jpeg",
@@ -298,8 +298,6 @@
         "265.png",
         "27.jpg",
         "152.jpg",
-        "209.jpg",
-        "167.jpeg",
         "155.jpg",
         "205.jpg",
         "17.JPG",

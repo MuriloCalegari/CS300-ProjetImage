@@ -20,8 +20,8 @@ def find_hough_parameters():
 
     found_params = find_param1_param2(training_set, parameters)
 
-    parameters["hough_parameters"]["param1"] = found_params[0]
-    parameters["hough_parameters"]["param2"] = found_params[1]
+    parameters["hough_parameters"]["param1"] = float(found_params[0])
+    parameters["hough_parameters"]["param2"] = float(found_params[1])
 
     with open("parameters.json", "w") as file:
         file.write(json.dumps(parameters, indent=4))
