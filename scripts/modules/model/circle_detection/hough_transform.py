@@ -294,7 +294,7 @@ def extract_color_and_hog_features(image_path, circles):
         a_mean = np.mean(lab_crop[:, :, 1])
         b_mean = np.mean(lab_crop[:, :, 2])
         
-        hog_features, hog_image = extract_hog_features(resized_crop)  #
+        hog_features, hog_image = extract_hog_features(resized_crop)  
         hog_features_1d = hog_features.reshape(-1)
         hog_features_normalized = StandardScaler().fit_transform(hog_features_1d.reshape(-1, 1))
         
@@ -329,7 +329,9 @@ def extract_color_features(image_path, circles):
         if crop.size == 0:
             continue  
         
-        resized_crop = cv.resize(crop, (10, 10))
+        # normalization
+        normalized_crop = crop.astype(np.float32) / 255.0
+        resized_crop = cv.resize(normalized_crop, (10, 10))
 
         lab_crop = cv.cvtColor(resized_crop, cv.COLOR_BGR2LAB)
         l_mean = np.mean(lab_crop[:, :, 0])
