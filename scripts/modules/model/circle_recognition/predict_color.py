@@ -49,6 +49,6 @@ def predict_with_color_features(image_path, svm_model, scaler):
 svm_model = load('/Volumes/SSD/ProjetImage/ProjetImage/scripts/SVM_COLOR.joblib')
 scaler = load('scaler.joblib')
 
-image_path = '/Volumes/SSD/ProjetImage/ProjetImage/DividedDataset/valset/175.jpg'
+image_path = '/Volumes/SSD/ProjetImage/valset/193.jpg'
 
 predict_with_color_features(image_path, svm_model, scaler)

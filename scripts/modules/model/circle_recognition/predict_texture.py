@@ -53,5 +53,5 @@ def pad_features(hog_features, target_length=207936):
 
 svm_model = load('svm_model.joblib')
 
-test_image_path = '/Volumes/SSD/ProjetImage/ProjetImage/DividedDataset/valset/175.jpg'
+test_image_path = '/Volumes/SSD/ProjetImage/valset/219.jpg'
 predict_with_hog_features(test_image_path, svm_model)

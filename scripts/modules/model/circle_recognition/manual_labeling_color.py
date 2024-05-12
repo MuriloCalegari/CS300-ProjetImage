@@ -40,6 +40,9 @@ def label_pieces(image_folder, output_file):
                         writer.writerow([label, diameter, l_mean, a_mean, b_mean])
                         cv.destroyAllWindows()
 
+
+
+
 train_image_folder = '/Volumes/SSD/ProjetImage/ProjetImage/DividedDataset/trainset'
 output_csv = '/Volumes/SSD/ProjetImage/ProjetImage/DividedDataset/COLOR_FEATURES_NORMALIZATION.csv' 
 
