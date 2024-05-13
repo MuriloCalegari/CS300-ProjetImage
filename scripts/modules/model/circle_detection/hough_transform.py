@@ -132,6 +132,9 @@ def CannyThreshold(val, src, src_gray):
     return dst
 
 def detect_cicles_opencv(image_path):
+
+    detected_coins_count = 0
+
     print(image_path)
     src = cv.imread(image_path, cv.IMREAD_COLOR)
     # Check if image is loaded fine
@@ -214,10 +217,13 @@ def detect_cicles_opencv(image_path):
 
             cv.circle(src, center, radius, (255, 0, 255), 3)
 
+            detected_coins_count += 1
+            
             text = f"{int(diameter)} mm"
             text_position = (int(i[0] - 20), int(i[1] - 20))
             cv.putText(src, text, text_position, cv.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-            
+        
+        cv.putText(src, f"Coins Detected: {detected_coins_count}", (10, 30), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
     # Show detected circles
     cv.imshow('Detected Circles', src)
