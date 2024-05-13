@@ -70,5 +70,5 @@ def predict_with_combined_features(image_path, svm_model, scaler):
 svm_model = load('/Volumes/SSD/ProjetImage/ProjetImage/scripts/SVM_COLOR_AND_TEXTURE.joblib')
 scaler = load('/Volumes/SSD/ProjetImage/ProjetImage/scripts/scaler_color_and_texture.joblib')
 
-image_path = '/Volumes/SSD/ProjetImage/testset/85.jpeg'
+image_path = '/Volumes/SSD/ProjetImage/valset/128.jpg'
 predict_with_combined_features(image_path, svm_model, scaler)
