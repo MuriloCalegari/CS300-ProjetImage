@@ -180,6 +180,8 @@ def detect_cicles_opencv(image_path):
 
     output = set()
     
+    detected_coins_count = 0
+
     if circles is not None:
         circles = np.uint16(np.around(circles))
         circles = circles[0, :]
@@ -189,6 +191,7 @@ def detect_cicles_opencv(image_path):
 
         for i in circles:
             print(f"Found circle! {i}")
+            detected_coins_count += 1
             center = (i[0], i[1])
             # circle center
             cv.circle(src, center, 1, (0, 100, 100), 3)
@@ -196,7 +199,9 @@ def detect_cicles_opencv(image_path):
             radius = i[2]
             output.add(((int(i[0] * 1 / scale), int(i[1] * 1 / scale)), int(radius * 1 / scale)))
             cv.circle(src, center, radius, (255, 0, 255), 3)
-    
+
+        cv.putText(src, f"Coins Detected: {detected_coins_count}", (10, 30), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        
     if(get_parameter("hough_parameters")["show_preview"]):
         src = np.hstack((compare, src))
         cv.imshow(f"detected circles {image_path}", src)
