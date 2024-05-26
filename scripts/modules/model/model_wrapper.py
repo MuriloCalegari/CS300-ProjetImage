@@ -18,7 +18,18 @@ mapping = {
     "2cts": "2_centimes",
     "1cts": "1_centimes",
     "1e": "1_euro",
-    "2e": "2_euro"
+    "2e": "2_euro",
+    "1_euros": "1_euro",
+    "2_euros": "2_euro",
+    "50_centimes_inverse" : "50_centimes",
+    "20_centimes_inverse" : "20_centimes",
+    "10_centimes_inverse" : "10_centimes",
+    "5_centimes_inverse" : "5_centimes",
+    "2_centimes_inverse" : "2_centimes",
+    "1_centime_inverse" : "1_centimes",
+    "1_euro_inverse" : "1_euro",
+    "2_euros_inverse" : "2_euros"
+
 }
 
 
@@ -106,10 +117,10 @@ def label_coins(image_path, coins, svm_model):
         # on utilise les coordonnées d'origine pour l'étiquetage
         labeled_coins.append((label, (x, y), radius))
 
-        cv.putText(image, label, (x - radius, y - radius - 10), cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+        #cv.putText(image, label, (x - radius, y - radius - 10), cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-    cv.imshow('Labeled Coins', image)
-    cv.waitKey(0)
-    cv.destroyAllWindows()
+    #cv.imshow('Labeled Coins', image)
+    #cv.waitKey(0)
+    #cv.destroyAllWindows()
 
     return labeled_coins
