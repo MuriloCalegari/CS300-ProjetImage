@@ -16,7 +16,7 @@ mapping = {
     "2cts": "2_centimes",
     "1cts": "1_centimes",
     "1e": "1_euro",
-    "2e": "2_euros"
+    "2e": "2_euro"
 }
 
 def predict_with_hog_features(image_path, svm_model):
@@ -31,7 +31,6 @@ def predict_with_hog_features(image_path, svm_model):
     dim = (width, height)
     resized_image = cv.resize(image, dim, interpolation=cv.INTER_AREA)
 
-   
 
     predictions = []  
 
@@ -84,66 +83,9 @@ def pad_features(hog_features, target_length=207936):
 
 svm_model = load('/Volumes/SSD/ProjetImage/ProjetImage/resources/model/svm_model.joblib')
 
-#test_image_path = '/Volumes/SSD/ProjetImage/ProjetImage/Images/248.jpg'
-#predictions = predict_with_hog_features(test_image_path, svm_model)
+""" test_image_path = '/Volumes/SSD/ProjetImage/ProjetImage/Images/218.jpg'
+predictions = predict_with_hog_features(test_image_path, svm_model)
 
-""" for prediction in predictions:
-    print(prediction) """
-
-def test_model(dataset="validation_set"):
-    testing_dataset = get_parameter(dataset)
-    svm_model = load(get_parameter('svm_model_path'))
-
-    y_true = []
-    y_pred = []
-    predicted_label_counts = Counter()
-
-    for image in testing_dataset:
-        print(f"\nTesting image: {image}")
-        image_full_path = f"{get_parameter('image_path')}/{image}"
-        annotated_image_path = f"{get_parameter('annotations_path')}/{image.split('.')[0]}.json"
-
-        with open(annotated_image_path, "r") as file:
-            shapes = json.loads(file.read())['shapes']
-            ground_truth_labels = [shape['label'] for shape in shapes]
-            y_true.extend(ground_truth_labels)
-
-            print(f"True labels for {image}: {ground_truth_labels}")
-
-        predicted_labels = predict_with_hog_features(image_full_path, svm_model)
-        predicted_label_counts.update(predicted_labels)
-
-        if len(predicted_labels) < len(ground_truth_labels):
-            predicted_labels.extend(["none"] * (len(ground_truth_labels) - len(predicted_labels)))
-        elif len(predicted_labels) > len(ground_truth_labels):
-            ground_truth_labels.extend(["none"] * (len(predicted_labels) - len(ground_truth_labels)))
-
-        y_pred.extend(predicted_labels)
-
-    y_true = [label if isinstance(label, str) else label[0] for label in y_true]
-    y_pred = [label if isinstance(label, str) else label[0] for label in y_pred]
-
-    print(f"Unique labels in y_true: {set(y_true)}")
-    print(f"Unique labels in y_pred: {set(y_pred)}")
-
-    print("\nClassification Report:")
-    print(classification_report(y_true, y_pred))
-
-    print("\nConfusion Matrix:")
-    cm = confusion_matrix(y_true, y_pred)
-    print(cm)
-
-    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=np.unique(y_true + y_pred))
-    disp.plot(cmap=plt.cm.Blues)
-    plt.show()
-
-    print("\nTotal number of predicted labels for each class:")
-    for label, count in predicted_label_counts.items():
-        print(f"{label}: {count}")
-
-    return y_true, y_pred
-
-
-
-if __name__ == "__main__":
-    y_true, y_pred = test_model(dataset="validation_set")
+for prediction in predictions:
+    print(prediction)
+ """

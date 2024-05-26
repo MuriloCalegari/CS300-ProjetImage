@@ -221,6 +221,7 @@ def find_test_coin_in_predicted_set(predicted_coins, test_coin, original_image_s
 
     return None
 
+
 def test_model(dataset = "validation_set"):
     testing_dataset = get_parameter(dataset)
 
@@ -234,7 +235,8 @@ def test_model(dataset = "validation_set"):
     for image in testing_dataset:
         print(f"\nTesting image: {image}")
         detected_coins = detect_coins(image, get_parameters())
-
+        print(f"Detected coins: {detected_coins}") 
+        
         true_positives_count = 0
         false_positives_count = 0
         false_negatives_count = 0
