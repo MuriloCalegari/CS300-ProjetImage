@@ -2,6 +2,9 @@ import json
 import numpy as np
 import sys
 import cv2 as cv
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
 
 sys.path.append("..")  # Add parent folder to sys.path
 
@@ -9,6 +12,36 @@ from modules.utils import get_parameter, get_parameters
 from modules.model.metrics_util import compute_jaccard_index
 from modules.model.model_wrapper import detect_coins
 from modules.model.model_wrapper import find_coins
+
+
+label_mapping = {
+    "50cts": "50_centimes",
+    "20cts": "20_centimes",
+    "10cts": "10_centimes",
+    "5cts": "5_centimes",
+    "2cts": "2_centimes",
+    "1cts": "1_centime",
+    "1e": "1_euro",
+    "2e": "2_euro",
+    "1_euros": "1_euro",
+    "2_euros": "2_euro",
+    "1_centimes" : "1_centime",
+    "50_centimes_inverse" : "50_centimes",
+    "20_centimes_inverse" : "20_centimes",
+    "10_centimes_inverse" : "10_centimes",
+    "5_centimes_inverse" : "5_centimes",
+    "2_centimes_inverse" : "2_centimes",
+    "2_centime_inverse" : "2_centimes",
+    "1_centime_inverse" : "1_centime",
+     "1_centimes_inverse" : "1_centime",
+    "1_euro_inverse" : "1_euro",
+    "2_euros_inverse" : "2_euro"
+
+}
+
+def clean_label(label):
+    """Convert label using predefined mapping."""
+    return label_mapping.get(label, label)
 
 def squared_distance(p1, p2):
     return (p1[0] - p2[0])**2 + (p1[1] - p2[1])**2
@@ -222,7 +255,7 @@ def find_test_coin_in_predicted_set(predicted_coins, test_coin, original_image_s
     return None
 
 
-def test_model(dataset = "validation_set"):
+def test_model(dataset="validation_set"):
     testing_dataset = get_parameter(dataset)
 
     micro_average_tp = 0
@@ -232,11 +265,14 @@ def test_model(dataset = "validation_set"):
     macro_average_precision_sum = 0
     macro_average_recall_sum = 0
 
+    true_labels = []
+    predicted_labels = []
+
     for image in testing_dataset:
         print(f"\nTesting image: {image}")
         detected_coins = detect_coins(image, get_parameters())
-        print(f"Detected coins: {detected_coins}") 
-        
+        print(f"Detected coins: {detected_coins}")
+
         true_positives_count = 0
         false_positives_count = 0
         false_negatives_count = 0
@@ -245,13 +281,13 @@ def test_model(dataset = "validation_set"):
         image_full_path = f"{get_parameter('image_path')}/{image}"
         with open(annotated_image_path, "r") as file:
             shapes = json.loads(file.read())['shapes']
-            found_coins = set() # A set of tuples (label, center, radius)
-            not_found_coins = set() # Idem
+            found_coins = set()
+            not_found_coins = set()
 
             for shape in shapes:
-                center = tuple(shape['points'][0])
-                center = tuple(map(int, center))
-                label = shape['label']
+                center = tuple(map(int, shape['points'][0]))
+                label = clean_label(shape['label'])
+                true_labels.append(label)
 
                 coin = (label, center, int(euclidean_distance(center, shape['points'][1])))
                 image_shape = cv.imread(image_full_path).shape
@@ -260,13 +296,20 @@ def test_model(dataset = "validation_set"):
 
                 if correctly_found_and_labeled_coin is not None:
                     found_coins.add(correctly_found_and_labeled_coin)
-                    detected_coins.remove(correctly_found_and_labeled_coin) # Each coin should only "be found" once
+                    detected_coins.remove(correctly_found_and_labeled_coin)
                     true_positives_count += 1
+                    predicted_labels.append(label)
                 else:
                     not_found = (label, center, int(euclidean_distance(center, shape['points'][1])))
                     not_found_coins.add(not_found)
                     false_negatives_count += 1
-            
+                    predicted_labels.append("None")
+
+            for detected_coin in detected_coins:
+                detected_label, detected_center, detected_radius = detected_coin
+                true_labels.append("None")
+                predicted_labels.append(detected_label)
+
             false_positives_count = len(detected_coins)
 
             # Add to the global metrics
@@ -285,7 +328,7 @@ def test_model(dataset = "validation_set"):
             print(f"Missed coins: {not_found_coins}")
             print(f"TP: {true_positives_count}, FP: {false_positives_count}, FN: {false_negatives_count}")
 
-    print("\n\nOverral results:")
+    print("\n\nOverall results:")
     print(f"TP: {micro_average_tp}, FP: {micro_average_fp}, FN: {micro_average_fn}")
     precision = micro_average_tp / (micro_average_tp + micro_average_fp) if (micro_average_tp + micro_average_fp) > 0 else 0
     recall = micro_average_tp / (micro_average_tp + micro_average_fn) if (micro_average_tp + micro_average_fn) > 0 else 0
@@ -293,12 +336,19 @@ def test_model(dataset = "validation_set"):
     print("\nMicro-Average results:")
     print(f"Precision: {precision}, Recall: {recall}, F1: {f1_score}")
 
-    # The macro-average is the average precision and recall over all the images
-    print("\nMacro-Average results:")
     macro_average_precision = macro_average_precision_sum / len(testing_dataset)
     macro_average_recall = macro_average_recall_sum / len(testing_dataset)
     macro_average_f1 = 0 if (macro_average_precision == 0 or macro_average_recall == 0) else 2 * (macro_average_precision * macro_average_recall) / (macro_average_precision + macro_average_recall)
+    print("\nMacro-Average results:")
     print(f"Precision: {macro_average_precision}, Recall: {macro_average_recall}, F1: {macro_average_f1}")
+
+    cm = confusion_matrix(true_labels, predicted_labels, labels=list(label_mapping.values()) + ["None"])
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=list(label_mapping.values()) + ["None"], yticklabels=list(label_mapping.values()))
+    plt.xlabel('Predicted Labels')
+    plt.ylabel('True Labels')
+    plt.title('Confusion Matrix')
+    plt.show()
 
     return {
         "precision": precision,
