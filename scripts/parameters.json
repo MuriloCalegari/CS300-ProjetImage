@@ -35,6 +35,9 @@
             }
         }
     },
+    "model_flow": {
+        "should_use_coin_detection_cache": true
+    },
     "training_set": [
         "76.JPG",
         "39.jpg",

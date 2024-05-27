@@ -128,3 +128,44 @@ def generate_coin_squares():
                     error_count += 1
 
                 i += 1
+
+
+cache_coins_folder = "./cache/coins_detection"
+
+def persist_coins_in_cache(image_name, coins):
+    """
+    Coins is a list of tuples as follows:
+    - tuple: A tuple of tuples with the following structure:
+        - label (str): The label of the coin.
+        - center (tuple): The center coordinates of the coin (x, y).
+        - radius (int): The radius of the coin.
+
+    Save the information in the tuples in the cache folder as a csv
+    """
+
+    try:
+        os.makedirs(cache_coins_folder)
+    except FileExistsError:
+        pass
+
+    with open(f"{cache_coins_folder}/{image_name}.csv", "w") as file:
+        file.write("center_x,center_y,radius\n")
+        for coin in coins:
+            file.write(f"{coin[0][0]},{coin[0][1]},{coin[1]}\n")
+
+def cache_contains_coins(image_name):
+    return isfile(f"{cache_coins_folder}/{image_name}.csv")
+
+def load_coins_from_cache(image_name):
+
+    if(not cache_contains_coins(image_name)):
+        raise Exception(f"Cache does not contain coins for image {image_name}")
+
+    coins = []
+    with open(f"{cache_coins_folder}/{image_name}.csv", "r") as file:
+        lines = file.readlines()
+        for line in lines[1:]:
+            parts = line.split(",")
+            coins.append(((int(parts[0]), int(parts[1])), int(parts[2])))
+
+    return coins

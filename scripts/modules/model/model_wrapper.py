@@ -4,6 +4,7 @@ from os.path import join
 import cv2 as cv
 
 from modules.model.circle_detection.hough_transform import detect_circles
+from modules.dataset.dataset_manipulation import cache_contains_coins, load_coins_from_cache, persist_coins_in_cache
 
 def detect_coins(image_file, parameters):
     """
@@ -28,8 +29,14 @@ def detect_coins(image_file, parameters):
     """
     image_path = join(parameters['image_path'], image_file)
 
+    coins = None
+
     # Detect coins in the image
-    coins = find_coins(image_path, parameters)
+    if parameters["model_flow"]["should_use_coin_detection_cache"] and cache_contains_coins(image_file):
+        coins = load_coins_from_cache(image_file)
+    else:
+        coins = find_coins(image_path, parameters)
+        persist_coins_in_cache(image_file, coins)
 
     labeled_coins = label_coins(image_path, coins, parameters)
 
