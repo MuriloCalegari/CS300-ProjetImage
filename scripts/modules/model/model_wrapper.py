@@ -19,20 +19,6 @@ mapping = {
     "1cts": "1_centime",
     "1e": "1_euro",
     "2e": "2_euro",
-    "1_euros": "1_euro",
-    "2_euros": "2_euro",
-    "1_centimes" : "1_centime",
-    "50_centimes_inverse" : "50_centimes",
-    "20_centimes_inverse" : "20_centimes",
-    "10_centimes_inverse" : "10_centimes",
-    "5_centimes_inverse" : "5_centimes",
-    "2_centimes_inverse" : "2_centimes",
-    "2_centime_inverse" : "2_centimes",
-    "1_centime_inverse" : "1_centime",
-     "1_centimes_inverse" : "1_centime",
-    "1_euro_inverse" : "1_euro",
-    "2_euros_inverse" : "2_euros"
-
 }
 
 

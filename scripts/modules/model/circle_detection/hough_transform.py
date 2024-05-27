@@ -161,7 +161,7 @@ def detect_cicles_opencv(image_path):
     if(get_hough_parameters().get("apply_laplace")):
         gray = apply_laplace(gray)
     # gray = cv.GaussianBlur(gray, (3, 3), 0)
-    cv.imshow("Laplace", gray)
+    #cv.imshow("Laplace", gray)
 
     # Apply OTSU to the image
     # ret1, mask = cv.threshold(gray,0,255,cv.THRESH_BINARY+cv.THRESH_OTSU)
@@ -173,12 +173,12 @@ def detect_cicles_opencv(image_path):
     # gray = cv.morphologyEx(gray, cv.MORPH_OPEN, kernel)
 
     # Show grayscale image
-    cv.imshow('Grayscale Image', cv.cvtColor(gray, cv.COLOR_GRAY2RGB))
+    #cv.imshow('Grayscale Image', cv.cvtColor(gray, cv.COLOR_GRAY2RGB))
 
     after_canny = CannyThreshold(0, src, gray)
 
     # Show Canny threshold image
-    cv.imshow('After Canny', after_canny)
+    #cv.imshow('After Canny', after_canny)
 
     rows = gray.shape[0]
 
@@ -213,7 +213,7 @@ def detect_cicles_opencv(image_path):
             diameter = 2 * radius
             scaled_center = (int(center[0] * 1 / scale), int(center[1] * 1 / scale))
             scaled_radius = int(radius * 1 / scale)
-            output.append((scaled_center[0], scaled_center[1], scaled_radius, diameter))
+            output.append((scaled_center, scaled_radius))
 
             cv.circle(src, center, radius, (255, 0, 255), 3)
 
@@ -223,16 +223,15 @@ def detect_cicles_opencv(image_path):
             text_position = (int(i[0] - 20), int(i[1] - 20))
             cv.putText(src, text, text_position, cv.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
         
-        cv.putText(src, f"Coins Detected: {detected_coins_count}", (10, 30), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        #cv.putText(src, f"Coins Detected: {detected_coins_count}", (10, 30), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
     # Show detected circles
-    cv.imshow('Detected Circles', src)
+    #cv.imshow('Detected Circles', src)
 
     if(get_parameter("hough_parameters")["show_preview"]):
         cv.waitKey(0)
         cv.destroyAllWindows()
 
-    output = np.array(output)
     return output
 
 

@@ -354,6 +354,7 @@ def test_model(dataset="testing_set"):
     macro_average_f1 = 0 if (macro_average_precision == 0 or macro_average_recall == 0) else 2 * (macro_average_precision * macro_average_recall) / (macro_average_precision + macro_average_recall)
     print(f"Precision: {macro_average_precision}, Recall: {macro_average_recall}, F1: {macro_average_f1}")
 
+
     # generate confusion matrix
     all_labels = sorted(list(all_labels))
     confusion_mat = confusion_matrix(y_true, y_pred, labels=all_labels)
