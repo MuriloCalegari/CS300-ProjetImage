@@ -1,8 +1,9 @@
 {
     "image_path": "../Images",
     "annotations_path": "../Images/Annotated",
+    "svm_model_path": "../resources/model/svm_model.joblib",
     "hough_parameters": {
-        "max_res": 2048,
+        "max_res": 1024,
         "show_preview": false,
         "use_default_hough": false,
         "apply_laplace": false,
@@ -211,7 +212,7 @@
         "200.jpg",
         "154.jpg"
     ],
-    "testing_set": [
+    "validation_set": [
         "244.jpg",
         "238.jpg",
         "248.jpg",
@@ -270,7 +271,7 @@
         "268.jpg",
         "251.jpg"
     ],
-    "validation_set": [
+    "testing_set": [
         "112.jpg",
         "232.jpg",
         "56.jpeg",

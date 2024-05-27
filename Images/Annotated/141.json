@@ -3,7 +3,7 @@
   "flags": {},
   "shapes": [
     {
-      "label": "1_euro_inverse",
+      "label": "1_euro",
       "points": [
         [
           405.5000000000001,
@@ -21,7 +21,7 @@
       "mask": null
     },
     {
-      "label": "50_centimes_inverse",
+      "label": "50_centimes",
       "points": [
         [
           398.0000000000001,
@@ -75,7 +75,7 @@
       "mask": null
     },
     {
-      "label": "5_centimes_inverse",
+      "label": "5_centimes",
       "points": [
         [
           1148.0,

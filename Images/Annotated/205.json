@@ -39,7 +39,7 @@
       "mask": null
     },
     {
-      "label": "20_centimes_inverse",
+      "label": "20_centimes",
       "points": [
         [
           647.3913043478261,
@@ -75,7 +75,7 @@
       "mask": null
     },
     {
-      "label": "1_euro_inverse",
+      "label": "1_euro",
       "points": [
         [
           169.13043478260877,
@@ -93,7 +93,7 @@
       "mask": null
     },
     {
-      "label": "5_centimes_inverse",
+      "label": "5_centimes",
       "points": [
         [
           470.7446808510638,
@@ -111,7 +111,7 @@
       "mask": null
     },
     {
-      "label": "2_centimes_inverse",
+      "label": "2_centimes",
       "points": [
         [
           397.54098360655735,

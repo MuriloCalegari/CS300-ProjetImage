@@ -21,7 +21,7 @@
       "mask": null
     },
     {
-      "label": "10_centimes_inverse",
+      "label": "10_centimes",
       "points": [
         [
           975.5000000000001,
@@ -39,7 +39,7 @@
       "mask": null
     },
     {
-      "label": "50_centimes_inverse",
+      "label": "50_centimes",
       "points": [
         [
           693.1506849315068,
@@ -57,7 +57,7 @@
       "mask": null
     },
     {
-      "label": "2_centimes_inverse",
+      "label": "2_centimes",
       "points": [
         [
           423.28767123287673,
@@ -75,7 +75,7 @@
       "mask": null
     },
     {
-      "label": "5_centimes_inverse",
+      "label": "5_centimes",
       "points": [
         [
           982.1917808219179,

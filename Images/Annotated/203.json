@@ -3,7 +3,7 @@
   "flags": {},
   "shapes": [
     {
-      "label": "1_centime_inverse",
+      "label": "1_centime",
       "points": [
         [
           541.0,
@@ -21,7 +21,7 @@
       "mask": null
     },
     {
-      "label": "10_centimes_inverse",
+      "label": "10_centimes",
       "points": [
         [
           664.0,
@@ -57,7 +57,7 @@
       "mask": null
     },
     {
-      "label": "2_euros_inverse",
+      "label": "2_euro",
       "points": [
         [
           607.0,
@@ -165,7 +165,7 @@
       "mask": null
     },
     {
-      "label": "1_euro_inverse",
+      "label": "1_euro",
       "points": [
         [
           312.0,
@@ -219,7 +219,7 @@
       "mask": null
     },
     {
-      "label": "1_centime_inverse",
+      "label": "1_centime",
       "points": [
         [
           290.0,

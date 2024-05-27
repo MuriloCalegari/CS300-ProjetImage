@@ -103,4 +103,3 @@ def normalize_radius(radius, image_shape):
 def denormalize_radius(radius, image_shape):
     return radius * math.sqrt(image_shape[0] * image_shape[1])
 
-
