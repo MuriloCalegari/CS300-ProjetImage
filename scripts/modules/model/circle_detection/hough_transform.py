@@ -2,10 +2,17 @@ import numpy as np
 
 from modules.model.circle_detection.utils import remove_overlapping_circles
 from modules.utils import get_parameter
-from modules.model.circle_detection.pre_processing import apply_erosion, apply_laplace, apply_opening
+from modules.model.circle_detection.pre_processing import apply_laplace
 
+import os
 import cv2 as cv
 import math
+import skimage.feature as skf
+
+from sklearn.preprocessing import StandardScaler
+import json
+
+scaler = StandardScaler()
 
 # Load picture and detect edges
 def detect_circles(image_path):
@@ -140,3 +147,116 @@ def get_hough_parameters():
         parameters["minDist"] = 30
 
     return parameters
+
+def extract_color_and_hog_features(image_path, circles):
+    src = cv.imread(image_path, cv.IMREAD_COLOR)
+    features_list = []
+    for (x, y, r, diameter) in circles:
+        x1 = max(x - r, 0)
+        y1 = max(y - r, 0)
+        x2 = min(x + r, src.shape[1])
+        y2 = min(y + r, src.shape[0])
+        crop = src[y1:y2, x1:x2]
+        
+        if crop.size == 0:
+            continue 
+
+        resized_crop = cv.resize(crop, (300, 300))
+
+        lab_crop = cv.cvtColor(resized_crop, cv.COLOR_BGR2LAB)
+        l_mean = np.mean(lab_crop[:, :, 0])
+        a_mean = np.mean(lab_crop[:, :, 1])
+        b_mean = np.mean(lab_crop[:, :, 2])
+        
+        hog_features, hog_image = extract_hog_features(resized_crop)  
+        hog_features_1d = hog_features.reshape(-1)
+        hog_features_normalized = StandardScaler().fit_transform(hog_features_1d.reshape(-1, 1))
+        
+        mean = np.mean(hog_features_normalized)
+        variance = np.var(hog_features_normalized)
+
+        print(f"Moyenne : {mean}")
+        print(f"Variance : {variance}")
+
+        features_list.append([diameter, l_mean, a_mean, b_mean, hog_features_normalized.tolist()])
+
+        """ 
+        plt.figure(figsize=(10, 10))
+        plt.imshow(hog_image, cmap='gray')
+        plt.title(f'HOG features for Circle at ({x}, {y})')
+        plt.axis('off')
+        plt.show() 
+        """
+
+    return features_list 
+    
+def extract_color_features(image_path, circles):
+    src = cv.imread(image_path, cv.IMREAD_COLOR)
+    features_list = []
+    for (x, y, r, diameter) in circles:
+        x1 = max(x - r, 0)
+        y1 = max(y - r, 0)
+        x2 = min(x + r, src.shape[1])
+        y2 = min(y + r, src.shape[0])
+        crop = src[y1:y2, x1:x2]
+        
+        if crop.size == 0:
+            continue  
+        
+        # normalization
+        normalized_crop = crop.astype(np.float32) / 255.0
+        resized_crop = cv.resize(normalized_crop, (10, 10))
+
+        lab_crop = cv.cvtColor(resized_crop, cv.COLOR_BGR2LAB)
+        l_mean = np.mean(lab_crop[:, :, 0])
+        a_mean = np.mean(lab_crop[:, :, 1])
+        b_mean = np.mean(lab_crop[:, :, 2])
+        
+        features_list.append([diameter, l_mean, a_mean, b_mean])
+
+    return features_list
+
+def extract_hog_features(region, cell_size=(8, 8), block_size=(2, 2), nbins=9):
+    gray_region = cv.cvtColor(region, cv.COLOR_BGR2GRAY)
+    hog_features, hog_image = skf.hog(gray_region, orientations=nbins, pixels_per_cell=cell_size, cells_per_block=block_size, visualize=True)
+    return hog_features, hog_image
+
+
+def create_features_vector(image_path):
+    circles = detect_cicles_opencv(image_path)
+    if circles.size > 0:
+        color_features = extract_color_and_hog_features(image_path, circles)
+        #color_features = extract_color_features(image_path, circles)
+        return color_features
+    else:
+        return []
+    
+def save_to_json(data, file_name):
+    def default_converter(o):
+        if isinstance(o, np.integer):
+            return int(o)
+        raise TypeError(f"Object of type {o.__class__.__name__} is not JSON serializable")
+    
+    with open(file_name, 'w') as f:
+        json.dump(data, f, indent=4, default=default_converter)
+        
+       
+def load_images_and_labels(base_path):
+    categories = os.listdir(base_path)
+    data = []
+
+    for category in categories:
+        category_path = os.path.join(base_path, category)
+        if os.path.isdir(category_path):
+            for img_name in os.listdir(category_path):
+                img_path = os.path.join(category_path, img_name)
+                img = cv.imread(str(img_path), cv.IMREAD_COLOR)
+                if img is not None:
+                    img_features = create_features_vector(str(img_path))
+                    for feature in img_features:
+                        data.append({
+                            'features': feature,
+                            'label': category
+                        })
+
+    return data

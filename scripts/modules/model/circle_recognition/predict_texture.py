@@ -81,7 +81,9 @@ def pad_features(hog_features, target_length=207936):
 
     return hog_features_padded
 
-svm_model = load('/Volumes/SSD/ProjetImage/ProjetImage/resources/model/svm_model.joblib')
+path = get_parameters()["svm_model_path"]
+
+svm_model = load(path)
 
 """ test_image_path = '/Volumes/SSD/ProjetImage/ProjetImage/Images/218.jpg'
 predictions = predict_with_hog_features(test_image_path, svm_model)

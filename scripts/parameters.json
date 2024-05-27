@@ -2,6 +2,9 @@
     "image_path": "../Images",
     "annotations_path": "../Images/Annotated",
     "svm_model_path": "../resources/model/svm_model.joblib",
+    "coin_recognition": {
+        "display_cropped_coin_preview": false
+    },
     "hough_parameters": {
         "max_res": 1024,
         "show_preview": false,

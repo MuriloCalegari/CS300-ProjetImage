@@ -1,14 +1,14 @@
-import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
 from os.path import join
 import cv2 as cv
 import numpy as np
 from joblib import load
 
+from modules.utils import get_parameters
 from modules.model.circle_detection.hough_transform import detect_circles
 from modules.model.circle_detection.hough_transform import extract_hog_features
 from modules.model.circle_recognition.predict_texture import pad_features
 
+from modules.dataset.dataset_manipulation import cache_contains_coins, load_coins_from_cache, persist_coins_in_cache
 
 mapping = {
     "50cts": "50_centimes",
@@ -61,6 +61,9 @@ def detect_coins(image_file, parameters):
 
     labeled_coins = label_coins(image_path, coins, svm_model)
 
+    # Filter out coins with label None
+    labeled_coins = [coin for coin in labeled_coins if coin[0] != 'none']
+
     print(f"Labeled coins: {labeled_coins}")
     return list(labeled_coins)
 
@@ -99,6 +102,17 @@ def label_coins(image_path, coins, svm_model):
         if crop_img.size == 0:
             print("Région croppée vide.")
             continue
+
+        ## Filter for coins that are less than 16x16 in size
+        if crop_img.shape[0] < 16 or crop_img.shape[1] < 16:
+            print("Région croppée trop petite.")
+            continue
+
+        # If display_cropped_coin_preview is set to True, display the cropped coin
+        if get_parameters()["coin_recognition"]["display_cropped_coin_preview"]:
+            cv.imshow('Cropped Coin', crop_img)
+            cv.waitKey(0)
+            cv.destroyAllWindows()
 
         hog_features, hog_image = extract_hog_features(crop_img)
         hog_features_padded = pad_features(hog_features)

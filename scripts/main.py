@@ -1,4 +1,4 @@
-from modules.utils import get_parameter
+from modules.utils import get_parameters
 
 
 def main():
@@ -10,7 +10,8 @@ def main():
           4. Generate squared images from dataset
           5. Test detect circles
           6. (Training) Find Hough Parameters
-          7. Run on one image
+          7. Run coin detection on one image
+          8. Run coin recognition on one image
           """)
 
     option = input("Option: ")
@@ -42,11 +43,11 @@ def main():
             circles = detect_circles(image_path)  
             color_features = extract_color_features(image_path, circles) 
             print("Color features:", color_features)
-            #features = extract_features(image_path)
-            #print("Features:", features)
-            #feature_vectors = create_features_vector(image_path)
-            #print(feature_vectors)
-            
+        case "8":
+            from modules.model.model_wrapper import detect_coins
+            image_path = input("Insert image path: ")
+            print(detect_coins(image_path, get_parameters()))
+
         case _:
             print("Invalid option")
             main()
