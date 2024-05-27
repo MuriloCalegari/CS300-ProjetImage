@@ -21,7 +21,7 @@
       "mask": null
     },
     {
-      "label": "1_euro_inverse",
+      "label": "1_euro",
       "points": [
         [
           1026.9565217391303,
@@ -39,7 +39,7 @@
       "mask": null
     },
     {
-      "label": "2_centimes_inverse",
+      "label": "2_centimes",
       "points": [
         [
           909.5652173913043,
@@ -57,7 +57,7 @@
       "mask": null
     },
     {
-      "label": "10_centimes_inverse",
+      "label": "10_centimes",
       "points": [
         [
           1153.0434782608695,
@@ -93,7 +93,7 @@
       "mask": null
     },
     {
-      "label": "1_euro_inverse",
+      "label": "1_euro",
       "points": [
         [
           716.5217391304348,
@@ -111,7 +111,7 @@
       "mask": null
     },
     {
-      "label": "1_centime_inverse",
+      "label": "1_centime",
       "points": [
         [
           1097.391304347826,
@@ -129,7 +129,7 @@
       "mask": null
     },
     {
-      "label": "50_centimes_inverse",
+      "label": "50_centimes",
       "points": [
         [
           1146.9565217391303,
@@ -183,7 +183,7 @@
       "mask": null
     },
     {
-      "label": "2_euros_inverse",
+      "label": "2_euro",
       "points": [
         [
           965.2173913043478,
@@ -219,7 +219,7 @@
       "mask": null
     },
     {
-      "label": "20_centimes_inverse",
+      "label": "20_centimes",
       "points": [
         [
           646.086956521739,

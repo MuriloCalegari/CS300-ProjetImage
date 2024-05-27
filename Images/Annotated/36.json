@@ -3,7 +3,7 @@
   "flags": {},
   "shapes": [
     {
-      "label": "2_centimes_inverse",
+      "label": "2_centimes",
       "points": [
         [
           1361.8787878787878,
@@ -21,7 +21,7 @@
       "mask": null
     },
     {
-      "label": "2_centimes_inverse",
+      "label": "2_centimes",
       "points": [
         [
           1937.6363636363637,
@@ -39,7 +39,7 @@
       "mask": null
     },
     {
-      "label": "20_centimes_inverse",
+      "label": "20_centimes",
       "points": [
         [
           1101.2727272727273,
@@ -57,7 +57,7 @@
       "mask": null
     },
     {
-      "label": "5_centimes_inverse",
+      "label": "5_centimes",
       "points": [
         [
           490.25000000000006,

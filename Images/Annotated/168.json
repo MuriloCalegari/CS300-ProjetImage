@@ -57,7 +57,7 @@
       "mask": null
     },
     {
-      "label": "20_centimes_inverse",
+      "label": "20_centimes",
       "points": [
         [
           1970.0,
@@ -75,7 +75,7 @@
       "mask": null
     },
     {
-      "label": "1_centime_inverse",
+      "label": "1_centime",
       "points": [
         [
           2755.0,
@@ -93,7 +93,7 @@
       "mask": null
     },
     {
-      "label": "1_centime_inverse",
+      "label": "1_centime",
       "points": [
         [
           3380.0,
@@ -129,7 +129,7 @@
       "mask": null
     },
     {
-      "label": "20_centimes_inverse",
+      "label": "20_centimes",
       "points": [
         [
           3300.0,
