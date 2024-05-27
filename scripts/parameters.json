@@ -6,6 +6,11 @@
         "show_preview": false,
         "use_default_hough": false,
         "apply_laplace": false,
+        "pre_processing": {
+            "apply_erosion": false,
+            "apply_opening": false,
+            "opening_iterations": 1
+        },
         "post_processing": {
             "remove_overlapping": true
         },
@@ -14,7 +19,7 @@
         "minDist": 0.02,
         "param1": 300,
         "param2": 0.85,
-        "dp": 1
+        "dp": 1.5
     },
     "training": {
         "hough_parameters": {

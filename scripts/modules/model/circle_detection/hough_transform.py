@@ -17,7 +17,7 @@ import imutils
 
 from modules.model.circle_detection.utils import remove_overlapping_circles
 from modules.utils import get_parameter
-from modules.model.circle_detection.pre_processing import apply_laplace
+from modules.model.circle_detection.pre_processing import apply_erosion, apply_laplace, apply_opening
 from modules.model.circle_detection.enchanced_hough_search import find_circles
 
 import cv2 as cv
@@ -139,21 +139,16 @@ def detect_cicles_opencv(image_path):
     # Equalize image's histogram
     # gray = cv.equalizeHist(gray)
 
-    # Apply Laplace
-    if(get_hough_parameters().get("apply_laplace")):
-        gray = apply_laplace(gray)
-    # gray = cv.GaussianBlur(gray, (3, 3), 0)
-    # cv.imshow("Laplace", gray)
+    parameters = get_hough_parameters()
 
-    
-    # # Apply OTSU to the image
-    # ret1, mask = cv.threshold(gray,0,255,cv.THRESH_BINARY+cv.THRESH_OTSU)
-    # gray = cv.bitwise_and(gray, gray, mask=mask)
-    
-    # Apply opening
-    # gray = cv.medianBlur(gray, 9)
-    # kernel = np.ones((3,3),np.uint8)
-    # gray = cv.morphologyEx(gray, cv.MORPH_OPEN, kernel)
+    ### Pre-processing of the image
+    if(parameters["pre_processing"]["apply_erosion"]):
+        gray = apply_erosion(gray)
+    if(parameters.get("apply_laplace")):
+        gray = apply_laplace(gray)
+    if(parameters["pre_processing"]["apply_opening"]):
+        iterations = parameters["pre_processing"]["opening_iterations"]
+        gray = apply_opening(gray, iterations)
 
     # Stack the images. src, mask, gray
     after_canny = CannyThreshold(0, src, gray)
@@ -161,8 +156,6 @@ def detect_cicles_opencv(image_path):
     compare = np.hstack((src, cv.cvtColor(gray, cv.COLOR_GRAY2RGB), after_canny))
     
     rows = gray.shape[0]
-
-    parameters = get_hough_parameters()
 
     if(get_parameter("hough_parameters")["use_default_hough"]):
         circles = cv.HoughCircles(gray, cv.HOUGH_GRADIENT, 1, rows / 8)
