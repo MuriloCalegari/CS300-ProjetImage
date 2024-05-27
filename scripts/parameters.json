@@ -1,9 +1,10 @@
 {
     "image_path": "../Images",
     "annotations_path": "../Images/Annotated",
+    "svm_model_path": "../resources/model/svm_model.joblib",
     "hough_parameters": {
         "max_res": 1024,
-        "show_preview": true,
+        "show_preview": false,
         "use_default_hough": false,
         "apply_laplace": false,
         "post_processing": {
