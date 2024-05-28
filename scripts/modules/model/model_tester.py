@@ -370,3 +370,140 @@ def test_model(dataset="testing_set"):
         "confusion_matrix": confusion_mat
     }
 
+
+
+def group_label(label):
+    if label in {"1_euro", "2_euro"}:
+        return "1/2e"
+    elif label in {"50_centimes", "20_centimes", "10_centimes"}:
+        return "jaune"
+    elif label in {"5_centimes", "2_centimes", "1_centime"}:
+        return "cuivre"
+    else:
+        return label
+    
+
+def test_modelBis(dataset="testing_set"):
+    testing_dataset = get_parameter(dataset)
+
+    micro_average_tp = 0
+    micro_average_fp = 0
+    micro_average_fn = 0
+
+    macro_average_precision_sum = 0
+    macro_average_recall_sum = 0
+
+    all_labels = set()
+    y_true = []
+    y_pred = []
+
+    for image in testing_dataset:
+        print(f"\nTesting image: {image}")
+        detected_coins = detect_coins(image, get_parameters())
+        print(f"Detected coins: {detected_coins}")
+
+        true_positives_count = 0
+        false_positives_count = 0
+        false_negatives_count = 0
+
+        annotated_image_path = f"{get_parameter('annotations_path')}/{image.split('.')[0]}.json"
+        image_full_path = f"{get_parameter('image_path')}/{image}"
+        with open(annotated_image_path, "r") as file:
+            shapes = json.loads(file.read())['shapes']
+            found_coins = set()  # A set of tuples (label, center, radius)
+            not_found_coins = set()  # Idem
+
+            for shape in shapes:
+                center = tuple(shape['points'][0])
+                center = tuple(map(int, center))
+                label = clean_label(shape['label'])
+                all_labels.add(group_label(label))
+
+                coin = (label, center, int(euclidean_distance(center, shape['points'][1])))
+                image_shape = cv.imread(image_full_path).shape
+
+                correctly_found_and_labeled_coin = find_test_coin_in_predicted_set(detected_coins, coin, image_shape)
+
+                if correctly_found_and_labeled_coin is not None:
+                    found_coins.add(correctly_found_and_labeled_coin)
+                    detected_coins.remove(correctly_found_and_labeled_coin)  # Each coin should only "be found" once
+                    true_positives_count += 1
+                    y_true.append(group_label(label))
+                    y_pred.append(group_label(correctly_found_and_labeled_coin[0]))
+                else:
+                    not_found = (label, center, int(euclidean_distance(center, shape['points'][1])))
+                    not_found_coins.add(not_found)
+                    false_negatives_count += 1
+                    y_true.append(group_label(label))
+                    y_pred.append('missed')
+
+            for coin in detected_coins:
+                all_labels.add(group_label(coin[0]))
+
+                min_distance = float('inf')
+                closest_coin = None
+                for shape in shapes:
+                    center = tuple(shape['points'][0])
+                    center = tuple(map(int, center))
+                    label = clean_label(shape['label'])
+                    coin_distance = euclidean_distance(center, coin[1])
+                    if coin_distance < min_distance:
+                        min_distance = coin_distance
+                        closest_coin = (label, center, int(euclidean_distance(center, shape['points'][1])))
+
+                if closest_coin is not None:
+                    y_true.append(group_label(closest_coin[0]))
+                    y_pred.append(group_label(coin[0]))
+                else:
+                    y_true.append('None')
+                    y_pred.append(group_label(coin[0]))
+
+            # Add to the global metrics
+            micro_average_tp += true_positives_count
+            micro_average_fp += false_positives_count
+            micro_average_fn += false_negatives_count
+
+            precision = true_positives_count / (true_positives_count + false_positives_count) if (true_positives_count + false_positives_count) > 0 else 0
+            recall = true_positives_count / (true_positives_count + false_negatives_count) if (true_positives_count + false_negatives_count) > 0 else 0
+            f1_score = 0 if (precision == 0 or recall == 0) else 2 * (precision * recall) / (precision + recall)
+
+            macro_average_precision_sum += precision
+            macro_average_recall_sum += recall
+
+            print(f"Found coins: {found_coins}")
+            print(f"Missed coins: {not_found_coins}")
+            print(f"TP: {true_positives_count}, FP: {false_positives_count}, FN: {false_negatives_count}")
+
+    print("\n\nOverall results:")
+    print(f"TP: {micro_average_tp}, FP: {micro_average_fp}, FN: {micro_average_fn}")
+    precision = micro_average_tp / (micro_average_tp + micro_average_fp) if (micro_average_tp + micro_average_fp) > 0 else 0
+    recall = micro_average_tp / (micro_average_tp + micro_average_fn) if (micro_average_tp + micro_average_fn) > 0 else 0
+    f1_score = 0 if (precision == 0 or recall == 0) else 2 * (precision * recall) / (precision + recall)
+    print("\nMicro-Average results:")
+    print(f"Precision: {precision}, Recall: {recall}, F1: {f1_score}")
+
+    # The macro-average is the average precision and recall over all the images
+    print("\nMacro-Average results:")
+    macro_average_precision = macro_average_precision_sum / len(testing_dataset)
+    macro_average_recall = macro_average_recall_sum / len(testing_dataset)
+    macro_average_f1 = 0 if (macro_average_precision == 0 or macro_average_recall == 0) else 2 * (macro_average_precision * macro_average_recall) / (macro_average_precision + macro_average_recall)
+    print(f"Precision: {macro_average_precision}, Recall: {macro_average_recall}, F1: {macro_average_f1}")
+
+    # Regroup labels before generating the confusion matrix
+    y_true_grouped = [group_label(label) for label in y_true]
+    y_pred_grouped = [group_label(label) for label in y_pred]
+    grouped_labels = sorted(set(y_true_grouped + y_pred_grouped))
+
+    # Generate confusion matrix
+    confusion_mat = confusion_matrix(y_true_grouped, y_pred_grouped, labels=grouped_labels)
+    disp = ConfusionMatrixDisplay(confusion_matrix=confusion_mat, display_labels=grouped_labels)
+    disp.plot(cmap=plt.cm.Blues)
+    plt.title('Confusion Matrix')
+    plt.show()
+
+    return {
+        "precision": precision,
+        "recall": recall,
+        "f1": f1_score,
+        "confusion_matrix": confusion_mat
+    }
