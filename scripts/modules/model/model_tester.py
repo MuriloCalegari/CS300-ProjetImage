@@ -21,7 +21,10 @@ label_mapping = {
     "1cts": "1_centime",
     "1e": "1_euro",
     "2e": "2_euro",
-   
+    "2_euros": "2_euro",
+    "1_centimes": "1_centime",
+    "1_centime_inverse": "1_centime",
+    "50_centimes_inverse": "50_centimes",
 }
 
 def clean_label(label):
@@ -53,34 +56,40 @@ def detected_coins_contains(detected_coins, label, center):
             return coin
     return None
 
-def was_coin_found_given_truth(ground_truth, circle, original_image_shape, threshold=0.5):
+def was_coin_found_given_truth(ground_truth, circle, original_image_shape):
     """
     Given a set of ground truth circles and a detected circle,
-    return True if the jaccard index between the detected circle and at least one of the ground truth circles
-    is greater than the threshold, else False.
-
-    Args:
-        ground_truth (set): A set of tuples (center, radius).
-        circle (tuple): A tuple (center, radius).
+    return the ground truth circle that corresponds to the detected circle
+    or None if no corresponding ground truth circle is found.
 
     Returns:
         truth: Corresponding ground truth circle if the detected circle is found, else None.
     """
 
     for truth in ground_truth:    
-        circle_mask = np.zeros(original_image_shape, np.uint8)
-        cv.circle(circle_mask, circle[0], circle[1], (255, 255, 255), -1)
-
-        truth_mask = np.zeros(original_image_shape, np.uint8)
-        cv.circle(truth_mask, truth[0], truth[1], (255, 255, 255), -1)
-
-        # f1_score = compute_f1(truth_mask, circle_mask)
-        jaccard_index = compute_jaccard_index(truth_mask, circle_mask)
-        
-        if(jaccard_index > threshold):
+        if(is_same_circle(circle, truth, original_image_shape)):
             return truth
 
     return None
+
+def is_same_circle(circle, truth, original_image_shape, threshold=0.5):
+    """
+    Return True if the jaccard index between the detected circle and at least one of the ground truth circles
+    is greater than the threshold, else False.
+
+    Args:
+        ground_truth (set): A set of tuples (center, radius).
+        circle (tuple): A tuple (center, radius).
+    """
+    circle_mask = np.zeros(original_image_shape, np.uint8)
+    cv.circle(circle_mask, circle[0], circle[1], (255, 255, 255), -1)
+
+    truth_mask = np.zeros(original_image_shape, np.uint8)
+    cv.circle(truth_mask, truth[0], truth[1], (255, 255, 255), -1)
+
+        # f1_score = compute_f1(truth_mask, circle_mask)
+    jaccard_index = compute_jaccard_index(truth_mask, circle_mask)
+    return jaccard_index > threshold
 
 def is_the_same_detected_coin(detected_coin, circle, original_image_shape, threshold=0.5):
     """
@@ -239,8 +248,95 @@ def find_test_coin_in_predicted_set(predicted_coins, test_coin, original_image_s
 
     return None
 
+def get_rescale_factor(src, max_largest_dim):
+    scale = 1
+    max_largest_dim = get_parameter("hough_parameters")["max_res"]
+    if src.shape[0] > max_largest_dim or src.shape[1] > max_largest_dim:
+        scale = max_largest_dim / max(src.shape[0], src.shape[1])
+        src = cv.resize(src, (int(src.shape[1] * scale), int(src.shape[0] * scale)))
 
-def test_model(dataset="testing_set"):
+    return (src, scale)
+
+def rescaled_coordinate(coordinate, rescale_factor):
+    return (int(coordinate[0] * rescale_factor), int(coordinate[1] * rescale_factor))
+
+def rescaled_dimension(dimension, rescale_factor):
+    return int(dimension * rescale_factor)
+
+# type can be correct_prediction, wrong_classification, or missed_coin
+def draw_text_with_background(img, text, center, radius, type):
+    fontFace = cv.FONT_HERSHEY_SIMPLEX
+    fontScale = 0.75
+    thickness = 1
+
+    baseline = 0
+    textSize, _ = cv.getTextSize(text, fontFace, fontScale, thickness)
+    baseline += thickness
+
+    if type == "correct_prediction":
+        textOrg = (center[0] - radius, center[1] - radius - textSize[1])
+        background_color = (0, 255, 0)  # Green
+        text_color = (0, 0, 0)  # Black
+    elif type == "wrong_classification":
+        textOrg = (center[0] + 2 * radius - textSize[0], center[1] + radius + textSize[1] + 12)
+        background_color = (0, 0, 255)  # Red
+        text_color = (255, 255, 255)  # White
+    elif type == "missed_coin":
+        textOrg = (center[0] - radius, center[1] - radius - textSize[1])
+        background_color = (255, 0, 0)  # Blue
+        text_color = (255, 255, 255)  # White
+    else:
+        textOrg = (center[0] - radius, center[1] - radius - textSize[1])
+        background_color = (255, 255, 255)  # White
+        text_color = (0, 0, 0)  # Black
+
+    cv.rectangle(img, (textOrg[0], textOrg[1] + baseline), (textOrg[0] + textSize[0], textOrg[1] - textSize[1]), background_color, -1)
+    cv.line(img, (textOrg[0], textOrg[1] + thickness), (textOrg[0] + textSize[0], textOrg[1] + thickness), background_color)
+
+    thickness = int(thickness)  # Ensure thickness is an integer
+
+    cv.putText(img, text, textOrg, fontFace, fontScale, text_color, thickness, cv.LINE_8)
+
+def annotate_image_with_results_and_display(img, correct_coins, incorrecly_labeled_coins, missed_coins):
+    """
+    Annotate the image with the detected coins and the ground truth coins and display the image.
+    Also include the label by the coin
+
+    Args:
+        img (numpy.ndarray): The input image.
+        detected_coins (list): A list of detected coins.
+        shapes (list): A list of shapes from the ground truth.
+    """
+
+    if not get_parameters()["coin_recognition"]["display_evaluation_after_recognition"]:
+        return
+    
+    # Reshape image to fit in a 1024x1024 box
+    img, rescale_factor = get_rescale_factor(img, 1024)
+
+    for coin in correct_coins:
+        center = rescaled_coordinate(coin[1], rescale_factor)
+        radius = rescaled_dimension(coin[2], rescale_factor)
+        cv.circle(img, center, radius, (0, 255, 0), 2)
+        draw_text_with_background(img, coin[0], center, radius, "correct_prediction")
+
+    for coin in incorrecly_labeled_coins:
+        center = rescaled_coordinate(coin[1], rescale_factor)
+        radius = rescaled_dimension(coin[2], rescale_factor)
+        cv.circle(img, center, radius, (0, 0, 255), 2)
+        draw_text_with_background(img, coin[0], center, radius, "wrong_classification")
+
+    if get_parameters()["coin_recognition"]["evaluation_display_ground_truth"]:
+        for coin in missed_coins:
+            center = rescaled_coordinate(coin[1], rescale_factor)
+            radius = rescaled_dimension(coin[2], rescale_factor)
+            cv.circle(img, center, radius, (255, 0, 0), 2)
+            draw_text_with_background(img, coin[0], center, radius, "missed_coin")
+
+    cv.imshow("Annotated image", img)
+    cv.waitKey(0)
+
+def test_model(dataset="validation_set"):
     testing_dataset = get_parameter(dataset)
 
     micro_average_tp = 0
@@ -266,6 +362,9 @@ def test_model(dataset="testing_set"):
 
         annotated_image_path = f"{get_parameter('annotations_path')}/{image.split('.')[0]}.json"
         image_full_path = f"{get_parameter('image_path')}/{image}"
+
+        img_data = cv.imread(image_full_path)
+
         with open(annotated_image_path, "r") as file:
             shapes = json.loads(file.read())['shapes']
             found_coins = set()  # A set of tuples (label, center, radius)
@@ -278,37 +377,37 @@ def test_model(dataset="testing_set"):
                 all_labels.add(label)
 
                 coin = (label, center, int(euclidean_distance(center, shape['points'][1])))
-                image_shape = cv.imread(image_full_path).shape
+                image_shape = img_data.shape
 
                 correctly_found_and_labeled_coin = find_test_coin_in_predicted_set(detected_coins, coin, image_shape)
 
-                if correctly_found_and_labeled_coin is not None:
+                if correctly_found_and_labeled_coin is not None: # Meaning coin was found and labeled correctly
                     found_coins.add(correctly_found_and_labeled_coin)
                     detected_coins.remove(correctly_found_and_labeled_coin)  # Each coin should only "be found" once
                     true_positives_count += 1
                     y_true.append(label)
                     y_pred.append(correctly_found_and_labeled_coin[0])
                 else:
-                    not_found = (label, center, int(euclidean_distance(center, shape['points'][1])))
+                    not_found = coin
                     not_found_coins.add(not_found)
                     false_negatives_count += 1
                     y_true.append(label)
                     y_pred.append('missed')
 
             false_positives_count = len(detected_coins)
-            for coin in detected_coins:
+            for coin in detected_coins: ## For each coin found but not correctly labeled
                 all_labels.add(coin[0])
-
-                min_distance = float('inf')
                 closest_coin = None
+
                 for shape in shapes:
                     center = tuple(shape['points'][0])
                     center = tuple(map(int, center))
                     label = clean_label(shape['label'])
-                    coin_distance = euclidean_distance(center, coin[1])
-                    if coin_distance < min_distance:
-                        min_distance = coin_distance
-                        closest_coin = (label, center, int(euclidean_distance(center, shape['points'][1])))
+
+                    truth_coin = (label, center, int(euclidean_distance(center, shape['points'][1])))
+
+                    if is_the_same_detected_coin(truth_coin, coin, image_shape):
+                        closest_coin = (label, center, int(euclidean_distance(center, shape['points'][1]))) 
 
                 if closest_coin is not None:
                     y_true.append(closest_coin[0])
@@ -338,6 +437,8 @@ def test_model(dataset="testing_set"):
             print(f"Found coins: {found_coins}")
             print(f"Missed coins: {not_found_coins}")
             print(f"TP: {true_positives_count}, FP: {false_positives_count}, FN: {false_negatives_count}")
+            
+            annotate_image_with_results_and_display(img_data, found_coins, detected_coins, not_found_coins)
 
     print("\n\nOverall results:")
     print(f"TP: {micro_average_tp}, FP: {micro_average_fp}, FN: {micro_average_fn}")
@@ -353,7 +454,6 @@ def test_model(dataset="testing_set"):
     macro_average_recall = macro_average_recall_sum / len(testing_dataset)
     macro_average_f1 = 0 if (macro_average_precision == 0 or macro_average_recall == 0) else 2 * (macro_average_precision * macro_average_recall) / (macro_average_precision + macro_average_recall)
     print(f"Precision: {macro_average_precision}, Recall: {macro_average_recall}, F1: {macro_average_f1}")
-
 
     # generate confusion matrix
     all_labels = sorted(list(all_labels))

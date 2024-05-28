@@ -124,11 +124,13 @@ def label_coins(image_path, coins, svm_model):
 
         # on utilise les coordonnées d'origine pour l'étiquetage
         labeled_coins.append((label, (x, y), radius))
+        cv.putText(image, label, (x - radius, y - radius - 10), cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-        #cv.putText(image, label, (x - radius, y - radius - 10), cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+        # Draw circle around detected coin
+        cv.circle(image, center, radius, (0, 255, 0), 2)
 
-    #cv.imshow('Labeled Coins', image)
-    #cv.waitKey(0)
-    #cv.destroyAllWindows()
+    if get_parameters()["coin_recognition"]["display_labeled_coins"]:
+        cv.imshow('Labeled Coins', image)
+        cv.waitKey(0)
 
     return labeled_coins

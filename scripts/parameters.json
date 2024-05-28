@@ -2,8 +2,14 @@
     "image_path": "../Images",
     "annotations_path": "../Images/Annotated",
     "svm_model_path": "../resources/model/svm_model.joblib",
+    "model_flow": {
+        "should_use_coin_detection_cache": true
+    },
     "coin_recognition": {
-        "display_cropped_coin_preview": false
+        "display_cropped_coin_preview": false,
+        "display_labeled_coins": false,
+        "display_evaluation_after_recognition": false,
+        "evaluation_display_ground_truth": false
     },
     "hough_parameters": {
         "max_res": 1024,
@@ -38,9 +44,6 @@
                 "step": 0.05
             }
         }
-    },
-    "model_flow": {
-        "should_use_coin_detection_cache": true
     },
     "training_set": [
         "76.JPG",
@@ -216,6 +219,7 @@
         "154.jpg"
     ],
     "validation_set": [
+        "182.jpg",
         "244.jpg",
         "238.jpg",
         "248.jpg",
@@ -294,7 +298,6 @@
         "120.jpg",
         "93.JPG",
         "165.jpg",
-        "182.jpg",
         "136.jpeg",
         "35.jpg",
         "181.jpg",
