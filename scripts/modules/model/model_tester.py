@@ -3,7 +3,6 @@ import numpy as np
 import sys
 import cv2 as cv
 import matplotlib.pyplot as plt
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
 sys.path.append("..")  # Add parent folder to sys.path
 
@@ -25,7 +24,44 @@ label_mapping = {
     "1_centimes": "1_centime",
     "1_centime_inverse": "1_centime",
     "50_centimes_inverse": "50_centimes",
+    "missed": "missed"
 }
+
+short_label_mapping = {
+    "50_centimes": "50cts",
+    "20_centimes": "20cts",
+    "10_centimes": "10cts",
+    "5_centimes": "5cts",
+    "2_centimes": "2cts",
+    "1_centime": "1cts",
+    "1_euro": "1e",
+    "2_euro": "2e",
+    "2_euros": "2e",
+    "1_centimes": "1cts",
+    "1_centime_inverse": "1cts",
+    "50_centimes_inverse": "50cts",
+    "missed": "missed"
+}
+
+short_to_value_mapping = {
+    "missed": 0,
+    "not_detected": 0,
+    "50cts": 0.5,
+    "20cts": 0.2,
+    "10cts": 0.1,
+    "5cts": 0.05,
+    "2cts": 0.02,
+    "1cts": 0.01,
+    "1e": 1,
+    "2e": 2,
+}
+
+def get_coin_value(short_label):
+    return short_to_value_mapping.get(short_label, 0)
+
+def shorten_label(label):
+    """Convert label using predefined mapping."""
+    return short_label_mapping.get(label, label)
 
 def clean_label(label):
     """Convert label using predefined mapping."""
@@ -56,7 +92,7 @@ def detected_coins_contains(detected_coins, label, center):
             return coin
     return None
 
-def was_coin_found_given_truth(ground_truth, circle, original_image_shape):
+def find_circle_given_truth(ground_truth, circle, original_image_shape):
     """
     Given a set of ground truth circles and a detected circle,
     return the ground truth circle that corresponds to the detected circle
@@ -163,7 +199,7 @@ def test_find_coins(dataset = "validation_set", parameters = get_parameters()):
             radius = coin[1]
             cv.circle(masked_model, center, radius, (255, 255, 255), -1)
 
-            found_truth = was_coin_found_given_truth(ground_truth, coin, image_data.shape)
+            found_truth = find_circle_given_truth(ground_truth, coin, image_data.shape)
 
             if(found_truth is not None):
                 true_positives_count+=1
@@ -244,6 +280,17 @@ def find_test_coin_in_predicted_set(predicted_coins, test_coin, original_image_s
         test_coin_label = test_coin[0]
         if(is_the_same_detected_coin(found_coin, test_coin, original_image_shape, threshold)
                 and found_coin_label == test_coin_label):
+            return found_coin
+
+    return None
+
+def find_coin_with_same_circle(predicted_coins, coin, original_image_shape, threshold=0.5):
+    coin_circle = (coin[1], coin[2])
+
+    for found_coin in predicted_coins:
+        found_coin_circle = (found_coin[1], found_coin[2])
+
+        if is_same_circle(found_coin_circle, coin_circle, original_image_shape, threshold):
             return found_coin
 
     return None
@@ -336,29 +383,91 @@ def annotate_image_with_results_and_display(img, correct_coins, incorrecly_label
     cv.imshow("Annotated image", img)
     cv.waitKey(0)
 
+def plot_confusion_matrix(y_true, y_pred):
+    """
+    Plot the confusion matrix where the y axis is the true labels and the x axis is the predicted labels.
+    The true labels should include a "not_a_coin" value that matches to a certain value in the predicted labels
+    when a coin was detected with the coin detection algorithm but that wasn't a coin in the ground truth.
+    """
+    all_labels = y_true + y_pred
+
+    # Map all to their equivalent short value
+    all_labels = ["unmatch" if label == "missed" or label == "not_a_coin" else label for label in all_labels]
+    all_labels = [shorten_label(label) for label in all_labels]
+    all_labels = list(set(all_labels))
+    y_true = [shorten_label(label) for label in y_true]
+    y_pred = [shorten_label(label) for label in y_pred]
+    
+    # Sort using get_coin_value
+    all_labels.sort(key=get_coin_value)
+
+    # For indexing purposes, any missed or not_a_coin is "unmatch" in all_labels
+    y_true_labels = [label if label != "unmatch" else "not_a_coin" for label in all_labels]
+    y_pred_labels = [label if label != "unmatch" else "missed" for label in all_labels]
+    y_pred_labels.sort(key=get_coin_value)
+    y_true_labels.sort(key=get_coin_value)
+
+    confusion_matrix = np.zeros((len(all_labels), len(all_labels)))
+
+    for i in range(len(y_true)):
+        true_label = y_true[i] if y_true[i] != "not_a_coin" else "unmatch"
+        pred_label = y_pred[i] if y_pred[i] != "missed" else "unmatch"
+
+        true_label_index = all_labels.index(true_label)
+        pred_label_index = all_labels.index(pred_label)
+
+        confusion_matrix[true_label_index][pred_label_index] += 1
+
+    fig, ax = plt.subplots()
+    im = ax.imshow(confusion_matrix)
+
+    ax.set_xticks(np.arange(len(all_labels)))
+    ax.set_yticks(np.arange(len(all_labels)))
+
+    ax.set_xticklabels(y_pred_labels)
+    ax.set_yticklabels(y_true_labels)
+
+    # Add the title for each axis
+    ax.set_xlabel("Predicted")
+    ax.set_ylabel("True")
+
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
+
+    for i in range(len(all_labels)):
+        for j in range(len(all_labels)):
+            text = ax.text(j, i, confusion_matrix[i, j], ha="center", va="center", color="w")
+
+    ax.set_title("Confusion matrix")
+    fig.tight_layout()
+    plt.show()
+
+    # Sum diagonal and divide by total number of elements
+    accuracy = np.trace(confusion_matrix) / np.sum(confusion_matrix)
+
+def shapes_to_coins(shapes):
+    coins = []
+    for shape in shapes:
+        center = tuple(shape['points'][0])
+        center = tuple(map(int, center))
+        label = clean_label(shape['label'])
+        radius = int(euclidean_distance(center, shape['points'][1]))
+        coins.append((label, center, radius))
+    return coins
+
 def test_model(dataset="validation_set"):
     testing_dataset = get_parameter(dataset)
-
-    micro_average_tp = 0
-    micro_average_fp = 0
-    micro_average_fn = 0
-
-    macro_average_precision_sum = 0
-    macro_average_recall_sum = 0
 
     all_labels = set()
     y_true = []
     y_pred = []
-    false_positives = {}  
+
+    correctly_classified = 0
+    total = 0
 
     for image in testing_dataset:
         print(f"\nTesting image: {image}")
         detected_coins = detect_coins(image, get_parameters())
         print(f"Detected coins: {detected_coins}")
-
-        true_positives_count = 0
-        false_positives_count = 0
-        false_negatives_count = 0
 
         annotated_image_path = f"{get_parameter('annotations_path')}/{image.split('.')[0]}.json"
         image_full_path = f"{get_parameter('image_path')}/{image}"
@@ -367,106 +476,60 @@ def test_model(dataset="validation_set"):
 
         with open(annotated_image_path, "r") as file:
             shapes = json.loads(file.read())['shapes']
+            truth_coins = shapes_to_coins(shapes)
             found_coins = set()  # A set of tuples (label, center, radius)
             not_found_coins = set()  # Idem
 
-            for shape in shapes:
-                center = tuple(shape['points'][0])
-                center = tuple(map(int, center))
-                label = clean_label(shape['label'])
+            for coin in truth_coins:
+                label = coin[0]
                 all_labels.add(label)
-
-                coin = (label, center, int(euclidean_distance(center, shape['points'][1])))
                 image_shape = img_data.shape
 
                 correctly_found_and_labeled_coin = find_test_coin_in_predicted_set(detected_coins, coin, image_shape)
 
                 if correctly_found_and_labeled_coin is not None: # Meaning coin was found and labeled correctly
                     found_coins.add(correctly_found_and_labeled_coin)
-                    detected_coins.remove(correctly_found_and_labeled_coin)  # Each coin should only "be found" once
-                    true_positives_count += 1
+                    detected_coins.remove(correctly_found_and_labeled_coin)  # Each coin should only be matched once
                     y_true.append(label)
                     y_pred.append(correctly_found_and_labeled_coin[0])
-                else:
+                else: # Coin was not found or was not labeled correctly
                     not_found = coin
                     not_found_coins.add(not_found)
-                    false_negatives_count += 1
-                    y_true.append(label)
-                    y_pred.append('missed')
 
-            false_positives_count = len(detected_coins)
-            for coin in detected_coins: ## For each coin found but not correctly labeled
+            remaining_found_coins = detected_coins
+            for coin in remaining_found_coins: ## For each coin found but not correctly labeled
                 all_labels.add(coin[0])
-                closest_coin = None
+                equivalent_coin = find_coin_with_same_circle(not_found_coins, coin, img_data.shape)
 
-                for shape in shapes:
-                    center = tuple(shape['points'][0])
-                    center = tuple(map(int, center))
-                    label = clean_label(shape['label'])
-
-                    truth_coin = (label, center, int(euclidean_distance(center, shape['points'][1])))
-
-                    if is_the_same_detected_coin(truth_coin, coin, image_shape):
-                        closest_coin = (label, center, int(euclidean_distance(center, shape['points'][1]))) 
-
-                if closest_coin is not None:
-                    y_true.append(closest_coin[0])
+                if equivalent_coin is not None: # There is a real coin with the same circle
+                    y_true.append(equivalent_coin[0])
                     y_pred.append(coin[0])
-                else:
-                    y_true.append('None')
+                    not_found_coins.remove(equivalent_coin)
+                else: # There is no coin with the same circle
+                    y_true.append("not_a_coin")
                     y_pred.append(coin[0])
 
-                if closest_coin is not None:
-                    if closest_coin[0] in false_positives:
-                        false_positives[closest_coin[0]].append((closest_coin[1:], coin[1:]))  
-                    else:
-                        false_positives[closest_coin[0]] = [(closest_coin[1:], coin[1:])]  
-
-            # Add to the global metrics
-            micro_average_tp += true_positives_count
-            micro_average_fp += false_positives_count
-            micro_average_fn += false_negatives_count
-
-            precision = true_positives_count / (true_positives_count + false_positives_count) if (true_positives_count + false_positives_count) > 0 else 0
-            recall = true_positives_count / (true_positives_count + false_negatives_count) if (true_positives_count + false_negatives_count) > 0 else 0
-            f1_score = 0 if (precision == 0 or recall == 0) else 2 * (precision * recall) / (precision + recall)
-
-            macro_average_precision_sum += precision
-            macro_average_recall_sum += recall
+            remaining_truth_coins = not_found_coins
+            for coin in remaining_truth_coins:
+                y_true.append(coin[0])
+                y_pred.append("missed")
 
             print(f"Found coins: {found_coins}")
             print(f"Missed coins: {not_found_coins}")
-            print(f"TP: {true_positives_count}, FP: {false_positives_count}, FN: {false_negatives_count}")
+
+            correctly_classified += len(found_coins)
+            total += len(found_coins) + len(not_found_coins) + len(detected_coins)
             
             annotate_image_with_results_and_display(img_data, found_coins, detected_coins, not_found_coins)
 
     print("\n\nOverall results:")
-    print(f"TP: {micro_average_tp}, FP: {micro_average_fp}, FN: {micro_average_fn}")
-    precision = micro_average_tp / (micro_average_tp + micro_average_fp) if (micro_average_tp + micro_average_fp) > 0 else 0
-    recall = micro_average_tp / (micro_average_tp + micro_average_fn) if (micro_average_tp + micro_average_fn) > 0 else 0
-    f1_score = 0 if (precision == 0 or recall == 0) else 2 * (precision * recall) / (precision + recall)
-    print("\nMicro-Average results:")
-    print(f"Precision: {precision}, Recall: {recall}, F1: {f1_score}")
+    print(f"Correctly classified: {correctly_classified}")
+    print(f"Total: {total}")
+    print(f"Accuracy: {correctly_classified / total}")
 
-    # The macro-average is the average precision and recall over all the images
-    print("\nMacro-Average results:")
-    macro_average_precision = macro_average_precision_sum / len(testing_dataset)
-    macro_average_recall = macro_average_recall_sum / len(testing_dataset)
-    macro_average_f1 = 0 if (macro_average_precision == 0 or macro_average_recall == 0) else 2 * (macro_average_precision * macro_average_recall) / (macro_average_precision + macro_average_recall)
-    print(f"Precision: {macro_average_precision}, Recall: {macro_average_recall}, F1: {macro_average_f1}")
-
-    # generate confusion matrix
-    all_labels = sorted(list(all_labels))
-    confusion_mat = confusion_matrix(y_true, y_pred, labels=all_labels)
-    disp = ConfusionMatrixDisplay(confusion_matrix=confusion_mat, display_labels=all_labels)
-    disp.plot(cmap=plt.cm.Blues)
-    plt.title('Confusion Matrix')
-    plt.show()
+    plot_confusion_matrix(y_true, y_pred)
 
     return {
-        "precision": precision,
-        "recall": recall,
-        "f1": f1_score,
-        "confusion_matrix": confusion_mat
+        "accuracy": correctly_classified / total,
     }
 

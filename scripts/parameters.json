@@ -9,7 +9,7 @@
         "display_cropped_coin_preview": false,
         "display_labeled_coins": false,
         "display_evaluation_after_recognition": false,
-        "evaluation_display_ground_truth": false
+        "evaluation_display_ground_truth": true
     },
     "hough_parameters": {
         "max_res": 1024,
