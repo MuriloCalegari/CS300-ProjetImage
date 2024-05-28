@@ -454,6 +454,79 @@ def shapes_to_coins(shapes):
         coins.append((label, center, radius))
     return coins
 
+def compute_class_wise_results(correct_predictions_count_map, class_instances_count_map, class_predictions):
+    labels_sorted_by_value = sorted(correct_predictions_count_map.keys(), key=lambda x: get_coin_value(shorten_label(x)))
+
+    result = {}
+
+    for label in labels_sorted_by_value:
+        precision = correct_predictions_count_map[label] / class_predictions[label]
+        recall = correct_predictions_count_map[label] / class_instances_count_map[label]
+        f1_score = 0 if (precision == 0 or recall == 0) else 2 * (precision * recall) / (precision + recall)
+
+        print(f"Label: {label}")
+        print(f"Precision: {precision}")
+        print(f"Recall: {recall}")
+        print(f"F1 score: {f1_score}")
+        print("\n")
+
+        result[label] = {
+            "precision": precision,
+            "recall": recall,
+            "f1_score": f1_score
+        }
+    
+    return result
+
+def compute_macro_average(results):
+    precision_sum = 0
+    recall_sum = 0
+    f1_score_sum = 0
+
+    for label in results:
+        precision_sum += results[label]["precision"]
+        recall_sum += results[label]["recall"]
+        f1_score_sum += results[label]["f1_score"]
+
+    precision = precision_sum / len(results)
+    recall = recall_sum / len(results)
+    f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+
+    print(f"Macro-average precision: {precision}")
+    print(f"Macro-average recall: {recall}")
+    print(f"Macro-average F1 score: {f1_score}")
+
+    return (precision, recall, f1_score)
+
+def plot_results(results):
+    """
+    Plot the results of the model testing using a heatmap
+
+    Args:
+        results (dict): A dictionary of the results, indexed by label and containing the precision, recall, and F1 score.
+    """
+    labels = list(results.keys())
+    precision = [results[label]["precision"] for label in labels]
+    recall = [results[label]["recall"] for label in labels]
+    f1_score = [results[label]["f1_score"] for label in labels]
+    labels = list(map(shorten_label, labels))
+
+    x = np.arange(len(labels))
+    fig, ax = plt.subplots()
+
+    im = ax.imshow([precision, recall, f1_score], interpolation='nearest')
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels, rotation=45, ha='right')  # Rotate x labels by 45 degrees
+
+    ax.set_yticks([0, 1, 2])
+    ax.set_yticklabels(['Precision', 'Recall', 'F1 Score'])
+
+    cbar = ax.figure.colorbar(im, ax=ax)
+    cbar.ax.set_ylabel('Scores', rotation=-90, va="bottom")
+
+    plt.show()
+
 def test_model(dataset="validation_set"):
     testing_dataset = get_parameter(dataset)
 
@@ -464,6 +537,10 @@ def test_model(dataset="validation_set"):
     correctly_classified = 0
     total = 0
 
+    correct_predictions_count_map = {}
+    class_instances_count_map = {} # Denominator for recall
+    class_predictions_count_map = {} # Denominator for precision
+
     for image in testing_dataset:
         print(f"\nTesting image: {image}")
         detected_coins = detect_coins(image, get_parameters())
@@ -473,6 +550,9 @@ def test_model(dataset="validation_set"):
         image_full_path = f"{get_parameter('image_path')}/{image}"
 
         img_data = cv.imread(image_full_path)
+
+        for coin in detected_coins: ## Add all class predictions to denominator count
+            class_predictions_count_map[coin[0]] = class_predictions_count_map.get(coin[0], 0) + 1
 
         with open(annotated_image_path, "r") as file:
             shapes = json.loads(file.read())['shapes']
@@ -487,11 +567,16 @@ def test_model(dataset="validation_set"):
 
                 correctly_found_and_labeled_coin = find_test_coin_in_predicted_set(detected_coins, coin, image_shape)
 
+                # Add all class instances to the recall denominator count
+                class_instances_count_map[label] = class_instances_count_map.get(label, 0) + 1
+
                 if correctly_found_and_labeled_coin is not None: # Meaning coin was found and labeled correctly
                     found_coins.add(correctly_found_and_labeled_coin)
+                    correct_predictions_count_map[label] = correct_predictions_count_map.get(label, 0) + 1
                     detected_coins.remove(correctly_found_and_labeled_coin)  # Each coin should only be matched once
                     y_true.append(label)
                     y_pred.append(correctly_found_and_labeled_coin[0])
+
                 else: # Coin was not found or was not labeled correctly
                     not_found = coin
                     not_found_coins.add(not_found)
@@ -522,12 +607,18 @@ def test_model(dataset="validation_set"):
             
             annotate_image_with_results_and_display(img_data, found_coins, detected_coins, not_found_coins)
 
+    print("\n\nClass-wise results:")
+    results = compute_class_wise_results(correct_predictions_count_map, class_instances_count_map, class_predictions_count_map)
+
     print("\n\nOverall results:")
     print(f"Correctly classified: {correctly_classified}")
     print(f"Total: {total}")
     print(f"Accuracy: {correctly_classified / total}")
 
     plot_confusion_matrix(y_true, y_pred)
+    plot_results(results)
+
+    precision, recall, f1 = compute_macro_average(results)
 
     return {
         "accuracy": correctly_classified / total,
