@@ -123,7 +123,6 @@ def is_same_circle(circle, truth, original_image_shape, threshold=0.5):
     truth_mask = np.zeros(original_image_shape, np.uint8)
     cv.circle(truth_mask, truth[0], truth[1], (255, 255, 255), -1)
 
-        # f1_score = compute_f1(truth_mask, circle_mask)
     jaccard_index = compute_jaccard_index(truth_mask, circle_mask)
     return jaccard_index > threshold
 

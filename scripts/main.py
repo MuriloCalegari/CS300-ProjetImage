@@ -1,4 +1,4 @@
-from modules.utils import get_parameters
+from modules.utils import get_parameters, get_parameter
 
 
 def main():
@@ -12,6 +12,8 @@ def main():
           6. (Training) Find Hough Parameters
           7. Run coin detection on one image
           8. Run coin recognition on one image
+          9. Test coin detection on testing set.
+          10. Test coin recognition on testing set.
           """)
 
     option = input("Option: ")
@@ -47,7 +49,12 @@ def main():
             from modules.model.model_wrapper import detect_coins
             image_path = input("Insert image path: ")
             print(detect_coins(image_path, get_parameters()))
-
+        case "9":
+            from modules.model.model_tester import test_find_coins
+            test_find_coins(dataset="testing_set")
+        case "10":
+            from modules.model.model_tester import test_model
+            test_model(dataset="testing_set")
         case _:
             print("Invalid option")
             main()

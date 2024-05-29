@@ -2,7 +2,7 @@ import numpy as np
 
 from modules.model.circle_detection.utils import remove_overlapping_circles
 from modules.utils import get_parameter
-from modules.model.circle_detection.pre_processing import apply_laplace
+from modules.model.circle_detection.pre_processing import apply_erosion, apply_laplace, apply_opening
 
 import os
 import cv2 as cv
