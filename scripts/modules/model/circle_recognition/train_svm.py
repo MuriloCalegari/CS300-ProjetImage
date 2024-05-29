@@ -1,27 +1,31 @@
 import pandas as pd
+import numpy as np
+from skimage.feature import hog
+from skimage import io
 from sklearn import svm
 from sklearn.preprocessing import StandardScaler
 from joblib import dump
 
-def train_svm(train_file, kernel='linear', C=1.0, model_save_path='SVM_COLOR.joblib', scaler_save_path='scaler.joblib'):
+from modules.model.circle_detection.hough_transform import extract_hog_features
+
+
+def train_svm(train_file, kernel='linear', C=1.0, model_save_path='svm_model.joblib', scaler_save_path='scaler.joblib'):
     try:
         train_data = pd.read_csv(train_file)
 
-        required_columns = ['diameter', 'color_l_mean', 'color_a_mean', 'color_b_mean', 'label']
+        required_columns = ['image_path', 'diameter', 'label']
         if not all(column in train_data.columns for column in required_columns):
-            raise ValueError("Input data must contain the required columns.")
+            raise ValueError("input data must contain the required columns : 'image_path', 'diameter', 'label'.")
 
-        X_train = train_data[['diameter', 'color_l_mean', 'color_a_mean', 'color_b_mean']]
+        hog_features_list = []
+        for image_path in train_data['image_path']:
+            hog_features = extract_hog_features(image_path)
+            hog_features_list.append(hog_features)
         
-        def label_mapper(label):
-            if label in ['1e', '2e']:
-                return '1-2 euros'
-            elif label in ['1cts', '2cts', '5cts']:
-                return 'cuivre'
-            else:
-                return 'jaune'
-        
-        y_train = train_data['label'].apply(label_mapper)
+        X_hog = np.array(hog_features_list)
+        X_train = np.hstack((train_data[['diameter']].values, X_hog))
+
+        y_train = train_data['label']
 
         scaler = StandardScaler()
         X_train_scaled = scaler.fit_transform(X_train)
@@ -36,17 +40,4 @@ def train_svm(train_file, kernel='linear', C=1.0, model_save_path='SVM_COLOR.job
     except Exception as e:
         print(f"An error occurred: {e}")
         return None
-
-train_file = '/Volumes/SSD/ProjetImage/ProjetImage/DividedDataset/labeled_data.csv'
-model = train_svm(train_file)
-
-
-train_file = '/Volumes/SSD/ProjetImage/ProjetImage/DividedDataset/labeled_data.csv'
-model = train_svm(train_file)
-
-""" try:
-    svm_model = load('SVM_COLOR_NORMALIZATION.joblib')
-except FileNotFoundError:
-    svm_model = train_svm(train_file)
- """
 
