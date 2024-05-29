@@ -1,10 +1,8 @@
-# Détection et Reconnaissance de Pièces en Euros
+# Détection et Reconnaissance de pièces d'euros
 
-Ce projet implémente un système de détection et de reconnaissance de pièces en euros en utilisant des techniques de vision par ordinateur et d'apprentissage automatique. Le projet utilise OpenCV pour la détection des pièces, HoG (Histogram of Oriented Gradients) pour l'extraction de caractéristiques, et un classificateur SVM (Support Vector Machine) pour la reconnaissance des pièces.
-
+Ce projet implémente un système de détection et de reconnaissance de pièces en euros en utilisant des techniques de vision par ordinateur et d'apprentissage automatique. 
 
 ## Installation
-
 
 1. Installez les dépendances :
     ```sh
